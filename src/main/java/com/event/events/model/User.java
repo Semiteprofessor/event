@@ -3,6 +3,7 @@ package com.event.events.model;
 import com.event.events.enums.Provider;
 import com.event.events.enums.Role;
 import com.event.events.enums.UserType;
+import com.event.events.model.embeded.VendorOnboarding;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
