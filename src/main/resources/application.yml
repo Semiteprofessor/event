@@ -1,17 +1,6 @@
 spring:
   application:
-    name: fintech-banking
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/banking
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    name: event-management
 
   mail:
     username: ${EMAIL_USER}
@@ -30,6 +19,8 @@ spring:
     error:
       whitelabel:
         enabled: true
+  mongodb:
+    uri: ${MONGO_URI}
 
 server:
   port: 8899
