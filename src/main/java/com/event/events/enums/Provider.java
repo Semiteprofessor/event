@@ -1,4 +1,4 @@
-package com.event.events.constant;
+package com.event.events.enums;
 
 public enum Provider {
     GOOGLE, FACEBOOK, TWITTER, APPLE, UNKNOWN

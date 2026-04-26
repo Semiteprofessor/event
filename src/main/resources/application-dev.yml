@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: event-management
+
+  mail:
+    username: ${EMAIL_USER}
+    password: ${EMAIL_PASSWORD}
+    host: smtp.gmail.com
+    port: 587
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  web:
+    error:
+      whitelabel:
+        enabled: true
+  mongodb:
+    uri: ${MONGO_URI}
+
+  app:
+    paystack:
+      secret-key: ${PAYSTACK_SECRET_KEY:}
+    node-env: ${NODE_ENV:development}
+
+server:
+  port: ${PORT:8000}
+
+app:
+  base-url: http://localhost:8899
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}

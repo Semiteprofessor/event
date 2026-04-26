@@ -1,8 +1,8 @@
 package com.event.events.model;
 
-import com.event.events.constant.Provider;
-import com.event.events.constant.Role;
-import com.event.events.constant.UserType;
+import com.event.events.enums.Provider;
+import com.event.events.enums.Role;
+import com.event.events.enums.UserType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

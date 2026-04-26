@@ -21,7 +21,7 @@ public class Vendor {
 
     @Indexed
     @NotBlank
-    private String user; // ObjectId → String (reference to User)
+    private String user;
 
     @NotBlank
     private String businessName;
