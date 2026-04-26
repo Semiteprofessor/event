@@ -36,7 +36,7 @@ public class Booking {
 
     private BookingStatus status = BookingStatus.PAID;
 
-    private String vendor; // ObjectId → String
+    private String vendor;
 
     private VendorStatus vendorStatus = VendorStatus.PENDING;
 
