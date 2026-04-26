@@ -1,5 +1,6 @@
 package com.event.events.model;
 
+import com.event.events.constant.Provider;
 import com.event.events.constant.Role;
 import com.event.events.constant.UserType;
 import lombok.*;
