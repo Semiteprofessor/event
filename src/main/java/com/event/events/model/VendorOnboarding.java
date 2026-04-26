@@ -1,5 +1,6 @@
 package com.event.events.model;
 
+import com.event.events.enums.VendorStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
