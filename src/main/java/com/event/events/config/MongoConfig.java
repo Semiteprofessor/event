@@ -1,2 +1,9 @@
-package com.event.events.config;public class MongoConfig {
+package com.event.events.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
+
+@Configuration
+@EnableMongoAuditing
+public class MongoConfig {
 }
