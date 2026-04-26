@@ -1,6 +1,7 @@
 package com.event.events.model;
 
-import com.event.events.model.embeded.Activity;
+import com.event.events.enums.EventStatus;
+import com.event.events.model.embeded.*;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -57,7 +58,7 @@ public class Event {
 
     private EventStatus status = EventStatus.PUBLISHED;
 
-    private List<RegistrationType> registrationType;
+    private List<Notifications.RegistrationType> registrationType;
 
     private List<Attendee> attendees;
 
