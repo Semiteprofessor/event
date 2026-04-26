@@ -22,8 +22,13 @@ spring:
   mongodb:
     uri: ${MONGO_URI}
 
+  app:
+    paystack:
+      secret-key: ${PAYSTACK_SECRET_KEY:}
+    node-env: ${NODE_ENV:development}
+
 server:
-  port: 8899
+  port: ${PORT:8000}
 
 app:
   base-url: http://localhost:8899
