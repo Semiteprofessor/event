@@ -1,5 +1,6 @@
 package com.event.events.model.embeded;
 
+import com.event.events.enums.PaymentType;
 import lombok.Data;
 
 @Data

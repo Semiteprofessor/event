@@ -1,6 +1,8 @@
 package com.event.events.model;
 
+import com.event.events.enums.BookingStatus;
 import com.event.events.enums.VendorStatus;
+import com.event.events.model.embeded.BookingTicket;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
