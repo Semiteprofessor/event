@@ -1,6 +1,7 @@
 package com.event.events.model;
 
 import com.event.events.enums.VendorStatus;
+import com.event.events.model.embeded.NotificationPreference;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -45,7 +46,7 @@ public class Vendor {
 
     private NotificationPreference notificationPreference = new NotificationPreference();
 
-    private List<String> portfolioItems; // ObjectId[] → List<String>
+    private List<String> portfolioItems;
 
     @Min(0)
     private Double startingPrice;
