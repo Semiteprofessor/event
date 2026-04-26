@@ -1,4 +1,4 @@
-package com.fintech.banking.config;
+package com.event.events.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
