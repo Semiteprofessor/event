@@ -1,5 +1,6 @@
 package com.event.events.model;
 
+import com.event.events.enums.MediaType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,7 +21,7 @@ public class Portfolio {
     private String id;
 
     @NotBlank
-    private String vendor; // ObjectId → String (User reference)
+    private String vendor;
 
     @NotBlank
     private String title;
