@@ -1,0 +1,34 @@
+package com.event.events.model;
+
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.Date;
+import java.util.Map;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Document(collection = "notifications")
+public class Notification {
+
+    @Id
+    private String id;
+
+    private String user; // ObjectId → String (User reference)
+
+    private String title;
+
+    private String message;
+
+    private NotificationType type = NotificationType.SYSTEM;
+
+    private boolean read = false;
+
+    private Map<String, Object> metadata;
+
+    private Date createdAt;
+    private Date updatedAt;
+}
