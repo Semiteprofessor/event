@@ -2,11 +2,15 @@ spring:
   application:
     name: event-management
 
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+
   mail:
-    username: ${EMAIL_USER}
-    password: ${EMAIL_PASSWORD}
     host: smtp.gmail.com
     port: 587
+    username: ${EMAIL_USER}
+    password: ${EMAIL_PASSWORD}
     default-encoding: UTF-8
     properties:
       mail:
@@ -19,19 +23,17 @@ spring:
     error:
       whitelabel:
         enabled: true
-  mongodb:
-    uri: ${MONGO_URI}
-
-  app:
-    paystack:
-      secret-key: ${PAYSTACK_SECRET_KEY:}
-    node-env: ${NODE_ENV:development}
 
 server:
   port: ${PORT:8000}
 
 app:
-  base-url: http://localhost:8899
+  base-url: http://localhost:${server.port}
+
+  paystack:
+    secret-key: ${PAYSTACK_SECRET_KEY:}
+
+  node-env: ${NODE_ENV:development}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -39,3 +41,7 @@ jwt:
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
