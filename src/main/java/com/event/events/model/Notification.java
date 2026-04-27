@@ -1,5 +1,6 @@
 package com.event.events.model;
 
+import com.event.events.enums.NotificationType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -17,7 +18,7 @@ public class Notification {
     @Id
     private String id;
 
-    private String user; // ObjectId → String (User reference)
+    private String user;
 
     private String title;
 
