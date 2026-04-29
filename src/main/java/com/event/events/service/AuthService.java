@@ -234,35 +234,72 @@ public class AuthService {
         }
     }
 
-    public class TokenService {
+    public AuthResponse forgotPassword(String email) {
 
-        private final UserRepository userRepository;
-        private final JwtService jwtService;
+        // 🔍 Validate email
+        if (email == null || !email.matches("^\\S+@\\S+\\.\\S+$")) {
+            log.warn("Forgot password validation failed for {}: invalid email", email);
+            return new AuthResponse(
+                    400,
+                    new ApiResponse(false, "Invalid email format"),
+                    null
+            );
+        }
 
-        public String refreshToken(String token) {
+        try {
+            Optional<User> userOpt = userRepository.findByEmail(email);
 
-            if (token == null) {
-                throw new RuntimeException("Refresh token missing");
+            // ⚠️ Do NOT reveal user existence (security best practice)
+            if (userOpt.isEmpty()) {
+                log.warn("User with email {} does not exist", email);
+                return new AuthResponse(
+                        200,
+                        new ApiResponse(true,
+                                "Check your mail for reset link if you have registered."),
+                        null
+                );
             }
 
-            Claims payload;
+            User user = userOpt.get();
 
-            try {
-                payload = jwtService.verifyRefreshToken(token);
-            } catch (Exception e) {
-                throw new RuntimeException("Invalid or expired refresh token");
-            }
+            // 🔐 Generate secure token
+            String resetToken = TokenUtil.generateSecureToken(64);
 
-            String userId = payload.getSubject();
+            // 🌐 Build magic link
+            String magicLink = System.getenv("FRONTEND_REMOTE_URL")
+                    + "/auth/reset-password?token=" + resetToken;
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            // 💾 Save token
+            user.setResetToken(resetToken);
+            userRepository.save(user);
 
-            if (!token.equals(user.getRefreshToken())) {
-                throw new RuntimeException("Refresh token invalidated");
-            }
+            // 📧 Send email
+            emailService.sendOtp(
+                    email,
+                    magicLink,
+                    user.getName(),
+                    "BeeCron: Forgot Password"
+            );
 
-            return jwtService.generateToken(user);
+            log.info("Magic link sent to {} for password reset.", email);
+
+            return new AuthResponse(
+                    200,
+                    new ApiResponse(
+                            true,
+                            "Password reset link sent to your email address."
+                    ),
+                    null
+            );
+
+        } catch (Exception err) {
+            log.error("Forgot password failed for {}: {}", email, err.getMessage());
+
+            return new AuthResponse(
+                    500,
+                    new ApiResponse(false, "Internal Server Error"),
+                    null
+            );
         }
     }
 
