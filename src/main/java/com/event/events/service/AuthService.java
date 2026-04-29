@@ -1,7 +1,11 @@
 package com.event.events.service;
 
+import com.event.events.dto.request.LoginRequest;
 import com.event.events.dto.response.ApiResponse;
 import com.event.events.dto.response.AuthResponse;
+import com.event.events.model.User;
+import com.event.events.repository.OtpRepository;
+import com.event.events.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,99 @@ public class AuthService {
     private final OtpRepository otpRepository;
     private final UserRepository userRepository;
     private final JwtService jwtService;
+
+    public AuthResponse loginUser(LoginRequest request) {
+
+        try {
+            String email = request.getEmail();
+            String password = request.getPassword();
+
+            Optional<User> userOpt = userRepository.findByEmail(email);
+
+            if (userOpt.isEmpty()) {
+                log.warn("Login failed — user not found: {}", email);
+                return new AuthResponse(401,
+                        new ApiResponse(false, "Invalid credentials"),
+                        null);
+            }
+
+            User user = userOpt.get();
+
+            // 🔐 Password check
+            if (!PasswordUtil.matches(password, user.getPassword())) {
+                log.warn("Invalid password for email: {}", email);
+                return new AuthResponse(401,
+                        new ApiResponse(false, "Invalid credentials"),
+                        null);
+            }
+
+            // 📧 Email not verified
+            if (!user.isEmailVerified()) {
+
+                String otp = OtpUtil.generateOtp(5);
+
+                Otp otpEntity = new Otp();
+                otpEntity.setEmail(email);
+                otpEntity.setOtp(otp);
+                otpEntity.setOtpType("REGISTRATION");
+                otpEntity.setUpdatedAt(new Date());
+
+                otpRepository.save(otpEntity);
+
+                emailService.sendOtp(email, otp, user.getName());
+
+                log.info("Unverified email for {}. OTP resent.", email);
+
+                return new AuthResponse(403,
+                        new ApiResponse(false,
+                                "Please verify your email. OTP sent."),
+                        null);
+            }
+
+            // 🚫 Role check
+            if (!List.of("guest", "vendor", "admin", "super admin")
+                    .contains(user.getRole())) {
+
+                log.error("Unauthorized role for {}: {}", email, user.getRole());
+
+                return new AuthResponse(403,
+                        new ApiResponse(false, "Access denied"),
+                        null);
+            }
+
+            // 🔐 Generate tokens
+            String accessToken = jwtService.generateToken(user);
+            String refreshToken = jwtService.generateRefreshToken(user);
+
+            user.setRefreshToken(refreshToken);
+            user.setRefreshTokenExpires(
+                    new Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000)
+            );
+
+            userRepository.save(user);
+
+            log.info("Login successful for {} (role: {})", email, user.getRole());
+
+            user.setPassword(null); // hide password
+
+            return new AuthResponse(
+                    200,
+                    new ApiResponse(true, "Login successful", user),
+                    accessToken,
+                    refreshToken,
+                    user.getRole()
+            );
+
+        } catch (Exception err) {
+            log.error("Login error: {}", err.getMessage());
+
+            return new AuthResponse(
+                    500,
+                    new ApiResponse(false, "Internal Server Error"),
+                    null
+            );
+        }
+    }
 
     public AuthResponse verifyEmail(String email, String otp) {
 
