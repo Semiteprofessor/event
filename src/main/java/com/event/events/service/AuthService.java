@@ -22,6 +22,7 @@ public class AuthService {
     private final OtpRepository otpRepository;
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final EmailService emailService;
 
     public AuthResponse loginUser(LoginRequest request) {
 
