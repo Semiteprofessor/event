@@ -10,6 +10,7 @@ import com.event.events.repository.OtpRepository;
 import com.event.events.repository.UserRepository;
 import com.event.events.util.OtpUtil;
 import com.event.events.util.PasswordUtil;
+import com.event.events.util.TokenUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -24,456 +26,321 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final OtpRepository otpRepository;
+    private static final List<String> ALLOWED_ROLES =
+            List.of("guest", "vendor", "admin", "super admin");
+
     private final UserRepository userRepository;
+    private final OtpRepository otpRepository;
     private final JwtService jwtService;
     private final EmailService emailService;
 
-    public AuthResponse loginUser(LoginRequest request) {
-
+    /* =========================================================
+       LOGIN
+    ========================================================= */
+    public AuthResponse login(LoginRequest request) {
         try {
-            String email = request.getEmail();
-            String password = request.getPassword();
+            User user = getUserOrFail(request.getEmail());
 
-            Optional<User> userOpt = userRepository.findByEmail(email);
+            validatePassword(request.getPassword(), user);
 
-            if (userOpt.isEmpty()) {
-                log.warn("Login failed — user not found: {}", email);
-                return new AuthResponse(401,
-                        new ApiResponse(false, "Invalid credentials"),
-                        null);
-            }
-
-            User user = userOpt.get();
-
-            // 🔐 Password check
-            if (!PasswordUtil.matches(password, user.getPassword())) {
-                log.warn("Invalid password for email: {}", email);
-                return new AuthResponse(401,
-                        new ApiResponse(false, "Invalid credentials"),
-                        null);
-            }
-
-            // 📧 Email not verified
             if (!user.isEmailVerified()) {
-
-                String otp = OtpUtil.generateOtp(5);
-
-                Otp otpEntity = new Otp();
-                otpEntity.setEmail(email);
-                otpEntity.setOtp(otp);
-                otpEntity.setOtpType("REGISTRATION");
-                otpEntity.setUpdatedAt(new Date());
-
-                otpRepository.save(otpEntity);
-
-                emailService.sendOtp(email, otp, user.getName());
-
-                log.info("Unverified email for {}. OTP resent.", email);
-
-                return new AuthResponse(403,
-                        new ApiResponse(false,
-                                "Please verify your email. OTP sent."),
-                        null);
+                resendOtpInternal(user);
+                return forbidden("Please verify your email. OTP sent.");
             }
 
-            // 🚫 Role check
-            if (!List.of("guest", "vendor", "admin", "super admin")
-                    .contains(user.getRole())) {
+            validateRole(user);
 
-                log.error("Unauthorized role for {}: {}", email, user.getRole());
-
-                return new AuthResponse(403,
-                        new ApiResponse(false, "Access denied"),
-                        null);
-            }
-
-            // 🔐 Generate tokens
             String accessToken = jwtService.generateToken(user);
             String refreshToken = jwtService.generateRefreshToken(user);
 
-            user.setRefreshToken(refreshToken);
-            user.setRefreshTokenExpires(
-                    new Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000)
-            );
+            persistRefreshToken(user, refreshToken);
 
-            userRepository.save(user);
+            log.info("Login successful for {} (role: {})", user.getEmail(), user.getRole());
 
-            log.info("Login successful for {} (role: {})", email, user.getRole());
+            user.setPassword(null);
 
-            user.setPassword(null); // hide password
+            return success("Login successful", user, accessToken, refreshToken, user.getRole());
 
-            return new AuthResponse(
-                    200,
-                    new ApiResponse(true, "Login successful", user),
-                    accessToken,
-                    refreshToken,
-                    user.getRole()
-            );
-
-        } catch (Exception err) {
-            log.error("Login error: {}", err.getMessage());
-
-            return new AuthResponse(
-                    500,
-                    new ApiResponse(false, "Internal Server Error"),
-                    null
-            );
+        } catch (AuthException ex) {
+            return ex.toResponse();
+        } catch (Exception ex) {
+            log.error("Login error", ex);
+            return serverError();
         }
     }
 
+    /* =========================================================
+       REGISTER
+    ========================================================= */
     @Transactional
-    public AuthResponse registerUser(RegisterRequest request) {
-
+    public AuthResponse register(RegisterRequest request) {
         try {
-            String name = request.getName();
-            String email = request.getEmail();
-            String password = request.getPassword();
-            String requestedRole = request.getRole();
+            validatePasswordPresence(request.getPassword());
 
-            if (password == null || password.isBlank()) {
-                return new AuthResponse(
-                        401,
-                        new ApiResponse(false, "Password is required"),
-                        null
-                );
+            Optional<User> existing = userRepository.findByEmail(request.getEmail());
+
+            if (existing.isPresent()) {
+                return handleExistingUser(existing.get(), request.getName());
             }
 
-            Optional<User> existingUserOpt = userRepository.findByEmail(email);
-            String otp = OtpUtil.generateOtp(5);
+            User user = createNewUser(request);
 
-            // 🔁 Existing user
-            if (existingUserOpt.isPresent()) {
-                User existingUser = existingUserOpt.get();
+            sendAndPersistOtp(user);
 
-                if (existingUser.isEmailVerified()) {
-                    return new AuthResponse(
-                            403,
-                            new ApiResponse(false,
-                                    "User already exists and verified"),
-                            null
-                    );
-                }
+            log.info("User registered: {}", user.getEmail());
 
-                // 🔄 Update OTP
-                Otp otpEntity = otpRepository
-                        .findByEmail(email)
-                        .orElse(new Otp());
-
-                otpEntity.setEmail(email);
-                otpEntity.setOtp(otp);
-                otpEntity.setOtpType("REGISTRATION");
-
-                otpRepository.save(otpEntity);
-
-                emailService.sendOtp(email, otp, name);
-
-                return new AuthResponse(
-                        200,
-                        new ApiResponse(true, "OTP resent for verification"),
-                        null
-                );
-            }
-
-            // 👑 Role assignment
-            long userCount = userRepository.count();
-
-            String assignedRole =
-                    userCount == 0
-                            ? "super admin"
-                            : (requestedRole != null ? requestedRole : "guest");
-
-            boolean isAdmin =
-                    assignedRole.equals("admin") || assignedRole.equals("super admin");
-
-            // 👤 Create user
-            User newUser = User.builder()
-                    .name(name)
-                    .email(email)
-                    .password(PasswordUtil.encode(password))
-                    .role(assignedRole)
-                    .isAdmin(isAdmin)
-                    .emailVerified(false)
-                    .build();
-
-            userRepository.save(newUser);
-
-            // 🔐 Save OTP
-            Otp otpEntity = new Otp();
-            otpEntity.setOtp(otp);
-            otpEntity.setName(name);
-            otpEntity.setEmail(email);
-            otpEntity.setOtpType("REGISTRATION");
-
-            otpRepository.save(otpEntity);
-
-            // 📧 Send email
-            emailService.sendOtp(email, otp, name);
-
-            log.info("{} registered successfully: {}", assignedRole, email);
-
-            return new AuthResponse(
-                    201,
-                    new ApiResponse(
-                            true,
-                            "Registration successful as " + assignedRole +
-                                    ". Please verify your email.",
-                            newUser
-                    ),
-                    null
+            return created(
+                    "Registration successful. Please verify your email.",
+                    user
             );
 
-        } catch (Exception err) {
-            log.error("Registration failed for {}: {}", request.getEmail(), err.getMessage());
-
-            return new AuthResponse(
-                    500,
-                    new ApiResponse(false, "Internal Server Error"),
-                    null
-            );
+        } catch (AuthException ex) {
+            return ex.toResponse();
+        } catch (Exception ex) {
+            log.error("Registration error", ex);
+            return serverError();
         }
     }
 
-    public AuthResponse forgotPassword(String email) {
-
-        // 🔍 Validate email
-        if (email == null || !email.matches("^\\S+@\\S+\\.\\S+$")) {
-            log.warn("Forgot password validation failed for {}: invalid email", email);
-            return new AuthResponse(
-                    400,
-                    new ApiResponse(false, "Invalid email format"),
-                    null
-            );
-        }
-
-        try {
-            Optional<User> userOpt = userRepository.findByEmail(email);
-
-            // ⚠️ Do NOT reveal user existence (security best practice)
-            if (userOpt.isEmpty()) {
-                log.warn("User with email {} does not exist", email);
-                return new AuthResponse(
-                        200,
-                        new ApiResponse(true,
-                                "Check your mail for reset link if you have registered."),
-                        null
-                );
-            }
-
-            User user = userOpt.get();
-
-            // 🔐 Generate secure token
-            String resetToken = TokenUtil.generateSecureToken(64);
-
-            // 🌐 Build magic link
-            String magicLink = System.getenv("FRONTEND_REMOTE_URL")
-                    + "/auth/reset-password?token=" + resetToken;
-
-            // 💾 Save token
-            user.setResetToken(resetToken);
-            userRepository.save(user);
-
-            // 📧 Send email
-            emailService.sendOtp(
-                    email,
-                    magicLink,
-                    user.getName(),
-                    "BeeCron: Forgot Password"
-            );
-
-            log.info("Magic link sent to {} for password reset.", email);
-
-            return new AuthResponse(
-                    200,
-                    new ApiResponse(
-                            true,
-                            "Password reset link sent to your email address."
-                    ),
-                    null
-            );
-
-        } catch (Exception err) {
-            log.error("Forgot password failed for {}: {}", email, err.getMessage());
-
-            return new AuthResponse(
-                    500,
-                    new ApiResponse(false, "Internal Server Error"),
-                    null
-            );
-        }
-    }
-
+    /* =========================================================
+       EMAIL VERIFICATION
+    ========================================================= */
     public AuthResponse verifyEmail(String email, String otp) {
-
         try {
-            Optional<Otp> otpRecordOpt = otpRepository
-                    .findByEmailAndOtpAndOtpType(email, otp, "REGISTRATION");
+            Otp record = validateOtp(email, otp);
 
-            if (otpRecordOpt.isEmpty()) {
-                log.error("Invalid or mismatched OTP for email: {}", email);
-                return new AuthResponse(
-                        401,
-                        new ApiResponse(false,
-                                "The provided OTP does not match. Please try again or request a new one."),
-                        null
-                );
+            if (isOtpExpired(record)) {
+                resendOtp(email);
+                return unauthorized("OTP expired. New OTP sent.");
             }
 
-            Otp otpRecord = otpRecordOpt.get();
-
-            // ⏱️ Check expiration (5 minutes)
-            long diffMinutes = Duration.between(
-                    otpRecord.getUpdatedAt().toInstant(),
-                    Instant.now()
-            ).toMinutes();
-
-            if (diffMinutes > 5) {
-
-                String newOtp = OtpUtil.generateOtp(5);
-
-                otpRecord.setOtp(newOtp);
-                otpRepository.save(otpRecord);
-
-                log.warn("OTP expired for {}. New OTP generated.", email);
-
-                return new AuthResponse(
-                        401,
-                        new ApiResponse(false,
-                                "Your OTP has expired. A new one has been sent to your email."),
-                        null
-                );
-            }
-
-            // ✅ Update user
-            Optional<User> userOpt = userRepository.findByEmail(email);
-
-            if (userOpt.isEmpty()) {
-                log.error("User not found for email: {}", email);
-                return new AuthResponse(
-                        404,
-                        new ApiResponse(false, "User not found."),
-                        null
-                );
-            }
-
-            User user = userOpt.get();
+            User user = getUserOrFail(email);
             user.setEmailVerified(true);
             userRepository.save(user);
 
-            // 🧹 Delete OTP
             otpRepository.deleteByEmail(email);
 
-            // 🔐 Generate JWT
             String token = jwtService.generateToken(user);
 
-            log.info("User {} verified and JWT generated.", email);
+            log.info("User verified: {}", email);
 
-            return new AuthResponse(
-                    200,
-                    new ApiResponse(true, "Account verified successfully!"),
-                    token
-            );
+            return success("Account verified successfully!", null, token, null, null);
 
-        } catch (Exception err) {
-
-            log.error("Email verification failed for {}: {}", email, err.getMessage());
-
-            return new AuthResponse(
-                    500,
-                    new ApiResponse(false, "Internal Server Error"),
-                    null
-            );
+        } catch (AuthException ex) {
+            return ex.toResponse();
+        } catch (Exception ex) {
+            log.error("Verification error", ex);
+            return serverError();
         }
     }
 
-    public AuthResponse refreshToken(String refreshToken) {
-
+    /* =========================================================
+       FORGOT PASSWORD
+    ========================================================= */
+    public AuthResponse forgotPassword(String email) {
         try {
-            // 🔐 Verify refresh token
-            String userId = jwtUtil.extractUserIdFromRefreshToken(refreshToken);
+            validateEmailFormat(email);
 
-            Optional<User> userOpt = userRepository.findById(userId);
+            Optional<User> userOpt = userRepository.findByEmail(email);
 
+            // Do not expose user existence
             if (userOpt.isEmpty()) {
-                return new AuthResponse(
-                        401,
-                        new ApiResponse(false, "User not found"),
-                        null
-                );
+                return ok("Check your mail if registered.");
             }
 
             User user = userOpt.get();
 
-            // 🆕 Generate new access token
-            String accessToken = jwtUtil.generateAccessToken(user);
+            String token = TokenUtil.generateSecureToken(64);
 
-            return new AuthResponse(
-                    200,
-                    new ApiResponse(true, "Token refreshed", accessToken),
-                    null
-            );
+            user.setResetToken(token);
+            userRepository.save(user);
 
-        } catch (Exception e) {
-            log.warn("Invalid refresh token attempt");
+            String link = buildResetLink(token);
 
-            return new AuthResponse(
-                    401,
-                    new ApiResponse(false, "Invalid or expired refresh token"),
-                    null
-            );
+            emailService.sendOtp(email, link, user.getName(), "Password Reset");
+
+            return ok("Password reset link sent.");
+
+        } catch (Exception ex) {
+            log.error("Forgot password error", ex);
+            return serverError();
         }
     }
 
-    public AuthResponse resendVerifyMailOTP(String email) {
-
-        // ❗ Validate email
-        if (email == null || email.isBlank()) {
-            return new AuthResponse(
-                    401,
-                    new ApiResponse(false,
-                            "Unauthorized request — email parameter missing."),
-                    null
-            );
-        }
-
+    /* =========================================================
+       REFRESH TOKEN
+    ========================================================= */
+    public AuthResponse refresh(String refreshToken) {
         try {
-            // 🔐 Generate OTP
-            String otp = OtpUtil.generateOtp(5);
+            String userId = jwtService.extractUserIdFromRefreshToken(refreshToken);
 
-            // 📧 Send email
-            emailService.sendOtp(
-                    email,
-                    otp,
-                    "User", // you can fetch name if needed
-                    "Verify your email"
-            );
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new AuthException(401, "User not found"));
 
-            // 💾 Save or update OTP
-            Optional<Otp> existingOtp = otpRepository.findByEmail(email);
+            validateStoredRefreshToken(user, refreshToken);
 
-            Otp otpEntity = existingOtp.orElse(new Otp());
-            otpEntity.setEmail(email);
-            otpEntity.setOtp(otp);
-            otpEntity.setOtpType("REGISTRATION");
+            String accessToken = jwtService.generateToken(user);
 
-            otpRepository.save(otpEntity);
+            return success("Token refreshed", null, accessToken, null, null);
 
-            log.info("OTP resent successfully to email: {}", email);
-
-            return new AuthResponse(
-                    200,
-                    new ApiResponse(true, "OTP resent successfully."),
-                    null
-            );
-
-        } catch (Exception err) {
-            log.error("Failed to resend OTP to {}: {}", email, err.getMessage());
-
-            return new AuthResponse(
-                    500,
-                    new ApiResponse(false, "Internal Server Error"),
-                    null
-            );
+        } catch (AuthException ex) {
+            return ex.toResponse();
+        } catch (Exception ex) {
+            log.warn("Invalid refresh token attempt");
+            return unauthorized("Invalid or expired refresh token");
         }
+    }
+
+    /* =========================================================
+       RESEND OTP
+    ========================================================= */
+    public AuthResponse resendOtp(String email) {
+        try {
+            User user = getUserOrFail(email);
+
+            resendOtpInternal(user);
+
+            return ok("OTP resent successfully.");
+
+        } catch (AuthException ex) {
+            return ex.toResponse();
+        } catch (Exception ex) {
+            log.error("Resend OTP error", ex);
+            return serverError();
+        }
+    }
+
+    /* =========================================================
+       PRIVATE HELPERS
+    ========================================================= */
+
+    private User getUserOrFail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthException(401, "Invalid credentials"));
+    }
+
+    private void validatePassword(String raw, User user) {
+        if (!PasswordUtil.matches(raw, user.getPassword())) {
+            throw new AuthException(401, "Invalid credentials");
+        }
+    }
+
+    private void validateRole(User user) {
+        if (!ALLOWED_ROLES.contains(user.getRole())) {
+            throw new AuthException(403, "Access denied");
+        }
+    }
+
+    private void validatePasswordPresence(String password) {
+        if (password == null || password.isBlank()) {
+            throw new AuthException(400, "Password is required");
+        }
+    }
+
+    private AuthResponse handleExistingUser(User user, String name) {
+        if (user.isEmailVerified()) {
+            throw new AuthException(403, "User already exists");
+        }
+        resendOtpInternal(user);
+        return ok("OTP resent for verification");
+    }
+
+    private User createNewUser(RegisterRequest req) {
+        long count = userRepository.count();
+
+        String role = count == 0 ? "super admin"
+                : (req.getRole() != null ? req.getRole() : "guest");
+
+        boolean isAdmin = role.contains("admin");
+
+        User user = User.builder()
+                .name(req.getName())
+                .email(req.getEmail())
+                .password(PasswordUtil.encode(req.getPassword()))
+                .role(role)
+                .isAdmin(isAdmin)
+                .emailVerified(false)
+                .build();
+
+        return userRepository.save(user);
+    }
+
+    private void resendOtpInternal(User user) {
+        String otp = OtpUtil.generateOtp(5);
+        saveOtp(user.getEmail(), otp);
+        emailService.sendOtp(user.getEmail(), otp, user.getName());
+    }
+
+    private void sendAndPersistOtp(User user) {
+        String otp = OtpUtil.generateOtp(5);
+        saveOtp(user.getEmail(), otp);
+        emailService.sendOtp(user.getEmail(), otp, user.getName());
+    }
+
+    private void saveOtp(String email, String otp) {
+        Otp entity = otpRepository.findByEmail(email).orElse(new Otp());
+        entity.setEmail(email);
+        entity.setOtp(otp);
+        entity.setOtpType("REGISTRATION");
+        otpRepository.save(entity);
+    }
+
+    private Otp validateOtp(String email, String otp) {
+        return otpRepository.findByEmailAndOtpAndOtpType(email, otp, "REGISTRATION")
+                .orElseThrow(() -> new AuthException(401, "Invalid OTP"));
+    }
+
+    private boolean isOtpExpired(Otp otp) {
+        return Duration.between(
+                otp.getUpdatedAt().toInstant(),
+                Instant.now()
+        ).toMinutes() > 5;
+    }
+
+    private void persistRefreshToken(User user, String token) {
+        user.setRefreshToken(token);
+        userRepository.save(user);
+    }
+
+    private void validateStoredRefreshToken(User user, String token) {
+        if (!token.equals(user.getRefreshToken())) {
+            throw new AuthException(401, "Refresh token invalidated");
+        }
+    }
+
+    private String buildResetLink(String token) {
+        return System.getenv("FRONTEND_REMOTE_URL")
+                + "/auth/reset-password?token=" + token;
+    }
+
+    /* =========================================================
+       RESPONSE HELPERS
+    ========================================================= */
+
+    private AuthResponse success(String msg, Object data,
+                                 String access, String refresh, String role) {
+        return new AuthResponse(200, new ApiResponse(true, msg, data),
+                access, refresh, role);
+    }
+
+    private AuthResponse ok(String msg) {
+        return new AuthResponse(200, new ApiResponse(true, msg), null);
+    }
+
+    private AuthResponse created(String msg, Object data) {
+        return new AuthResponse(201, new ApiResponse(true, msg, data), null);
+    }
+
+    private AuthResponse unauthorized(String msg) {
+        return new AuthResponse(401, new ApiResponse(false, msg), null);
+    }
+
+    private AuthResponse forbidden(String msg) {
+        return new AuthResponse(403, new ApiResponse(false, msg), null);
+    }
+
+    private AuthResponse serverError() {
+        return new AuthResponse(500,
+                new ApiResponse(false, "Internal Server Error"), null);
     }
 }
