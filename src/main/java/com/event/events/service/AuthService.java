@@ -1,14 +1,19 @@
 package com.event.events.service;
 
 import com.event.events.dto.request.LoginRequest;
+import com.event.events.dto.request.RegisterRequest;
 import com.event.events.dto.response.ApiResponse;
 import com.event.events.dto.response.AuthResponse;
+import com.event.events.model.Otp;
 import com.event.events.model.User;
 import com.event.events.repository.OtpRepository;
 import com.event.events.repository.UserRepository;
+import com.event.events.util.OtpUtil;
+import com.event.events.util.PasswordUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -108,6 +113,118 @@ public class AuthService {
 
         } catch (Exception err) {
             log.error("Login error: {}", err.getMessage());
+
+            return new AuthResponse(
+                    500,
+                    new ApiResponse(false, "Internal Server Error"),
+                    null
+            );
+        }
+    }
+
+    @Transactional
+    public AuthResponse registerUser(RegisterRequest request) {
+
+        try {
+            String name = request.getName();
+            String email = request.getEmail();
+            String password = request.getPassword();
+            String requestedRole = request.getRole();
+
+            if (password == null || password.isBlank()) {
+                return new AuthResponse(
+                        401,
+                        new ApiResponse(false, "Password is required"),
+                        null
+                );
+            }
+
+            Optional<User> existingUserOpt = userRepository.findByEmail(email);
+            String otp = OtpUtil.generateOtp(5);
+
+            // 🔁 Existing user
+            if (existingUserOpt.isPresent()) {
+                User existingUser = existingUserOpt.get();
+
+                if (existingUser.isEmailVerified()) {
+                    return new AuthResponse(
+                            403,
+                            new ApiResponse(false,
+                                    "User already exists and verified"),
+                            null
+                    );
+                }
+
+                // 🔄 Update OTP
+                Otp otpEntity = otpRepository
+                        .findByEmail(email)
+                        .orElse(new Otp());
+
+                otpEntity.setEmail(email);
+                otpEntity.setOtp(otp);
+                otpEntity.setOtpType("REGISTRATION");
+
+                otpRepository.save(otpEntity);
+
+                emailService.sendOtp(email, otp, name);
+
+                return new AuthResponse(
+                        200,
+                        new ApiResponse(true, "OTP resent for verification"),
+                        null
+                );
+            }
+
+            // 👑 Role assignment
+            long userCount = userRepository.count();
+
+            String assignedRole =
+                    userCount == 0
+                            ? "super admin"
+                            : (requestedRole != null ? requestedRole : "guest");
+
+            boolean isAdmin =
+                    assignedRole.equals("admin") || assignedRole.equals("super admin");
+
+            // 👤 Create user
+            User newUser = User.builder()
+                    .name(name)
+                    .email(email)
+                    .password(PasswordUtil.encode(password))
+                    .role(assignedRole)
+                    .isAdmin(isAdmin)
+                    .emailVerified(false)
+                    .build();
+
+            userRepository.save(newUser);
+
+            // 🔐 Save OTP
+            Otp otpEntity = new Otp();
+            otpEntity.setOtp(otp);
+            otpEntity.setName(name);
+            otpEntity.setEmail(email);
+            otpEntity.setOtpType("REGISTRATION");
+
+            otpRepository.save(otpEntity);
+
+            // 📧 Send email
+            emailService.sendOtp(email, otp, name);
+
+            log.info("{} registered successfully: {}", assignedRole, email);
+
+            return new AuthResponse(
+                    201,
+                    new ApiResponse(
+                            true,
+                            "Registration successful as " + assignedRole +
+                                    ". Please verify your email.",
+                            newUser
+                    ),
+                    null
+            );
+
+        } catch (Exception err) {
+            log.error("Registration failed for {}: {}", request.getEmail(), err.getMessage());
 
             return new AuthResponse(
                     500,
