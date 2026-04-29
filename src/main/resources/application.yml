@@ -6,6 +6,11 @@ spring:
     mongodb:
       uri: ${MONGO_URI}
 
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -24,14 +29,8 @@ spring:
       whitelabel:
         enabled: true
 
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-
 server:
   port: ${PORT:8000}
-
 
 eureka:
   instance:
@@ -43,12 +42,10 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
 
 rabbitmq:
-  exchange:
-    name: event.exchange
-  queue:
-    name: event.queue
-  routing:
-    key: event.tracking
+  host: ${RABBITMQ_HOST:localhost}
+  port: ${RABBITMQ_PORT:5672}
+  username: ${RABBITMQ_USER:guest}
+  password: ${RABBITMQ_PASSWORD:guest}
 
 app:
   base-url: http://localhost:${server.port}
