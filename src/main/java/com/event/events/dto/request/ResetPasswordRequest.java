@@ -1,4 +1,4 @@
-package com.event.events.dto;
+package com.event.events.dto.request;
 
 import lombok.Data;
 

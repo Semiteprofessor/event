@@ -1,5 +1,7 @@
 package com.event.events.controller;
 
+import com.event.events.dto.request.ResetPasswordRequest;
+import com.event.events.dto.request.ForgotPasswordRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
