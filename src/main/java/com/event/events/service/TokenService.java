@@ -1,5 +1,6 @@
 package com.event.events.service;
 
+import com.event.events.model.User;
 import com.event.events.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import org.springframework.stereotype.Service;
