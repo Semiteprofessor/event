@@ -1,5 +1,6 @@
 package com.event.events.util;
 
+import com.event.events.model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,6 @@ public class JwtUtil {
     private final Key accessKey = Keys.hmacShaKeyFor(jwtSecret.getBytes());
     private final Key refreshKey = Keys.hmacShaKeyFor(refreshSecret.getBytes());
 
-    // 🔍 Extract user ID from refresh token
     public String extractUserIdFromRefreshToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(refreshKey)
@@ -27,7 +27,6 @@ public class JwtUtil {
         return claims.get("id", String.class);
     }
 
-    // 🎫 Generate access token (15 mins)
     public String generateAccessToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getId())

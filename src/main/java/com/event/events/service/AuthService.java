@@ -423,4 +423,57 @@ public class AuthService {
             );
         }
     }
+
+    public AuthResponse resendVerifyMailOTP(String email) {
+
+        // ❗ Validate email
+        if (email == null || email.isBlank()) {
+            return new AuthResponse(
+                    401,
+                    new ApiResponse(false,
+                            "Unauthorized request — email parameter missing."),
+                    null
+            );
+        }
+
+        try {
+            // 🔐 Generate OTP
+            String otp = OtpUtil.generateOtp(5);
+
+            // 📧 Send email
+            emailService.sendOtp(
+                    email,
+                    otp,
+                    "User", // you can fetch name if needed
+                    "Verify your email"
+            );
+
+            // 💾 Save or update OTP
+            Optional<Otp> existingOtp = otpRepository.findByEmail(email);
+
+            Otp otpEntity = existingOtp.orElse(new Otp());
+            otpEntity.setEmail(email);
+            otpEntity.setOtp(otp);
+            otpEntity.setOtpType("REGISTRATION");
+
+            otpRepository.save(otpEntity);
+
+            log.info("OTP resent successfully to email: {}", email);
+
+            return new AuthResponse(
+                    200,
+                    new ApiResponse(true, "OTP resent successfully."),
+                    null
+            );
+
+        } catch (Exception err) {
+            log.error("Failed to resend OTP to {}: {}", email, err.getMessage());
+
+            return new AuthResponse(
+                    500,
+                    new ApiResponse(false, "Internal Server Error"),
+                    null
+            );
+        }
+    }
 }
