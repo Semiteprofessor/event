@@ -385,4 +385,42 @@ public class AuthService {
             );
         }
     }
+
+    public AuthResponse refreshToken(String refreshToken) {
+
+        try {
+            // 🔐 Verify refresh token
+            String userId = jwtUtil.extractUserIdFromRefreshToken(refreshToken);
+
+            Optional<User> userOpt = userRepository.findById(userId);
+
+            if (userOpt.isEmpty()) {
+                return new AuthResponse(
+                        401,
+                        new ApiResponse(false, "User not found"),
+                        null
+                );
+            }
+
+            User user = userOpt.get();
+
+            // 🆕 Generate new access token
+            String accessToken = jwtUtil.generateAccessToken(user);
+
+            return new AuthResponse(
+                    200,
+                    new ApiResponse(true, "Token refreshed", accessToken),
+                    null
+            );
+
+        } catch (Exception e) {
+            log.warn("Invalid refresh token attempt");
+
+            return new AuthResponse(
+                    401,
+                    new ApiResponse(false, "Invalid or expired refresh token"),
+                    null
+            );
+        }
+    }
 }
