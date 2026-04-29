@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface OtpRepository extends MongoRepository<Otp, String> {
 
+    Optional<Otp> findByEmail(String email);
+
     Optional<Otp> findByEmailAndOtpAndOtpType(
             String email,
             String otp,

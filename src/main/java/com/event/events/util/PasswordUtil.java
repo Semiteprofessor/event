@@ -6,7 +6,7 @@ public class PasswordUtil {
 
     private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    public static boolean matches(String raw, String hashed) {
-        return encoder.matches(raw, hashed);
+    public static String encode(String password) {
+        return encoder.encode(password);
     }
 }
