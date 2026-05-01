@@ -11,6 +11,7 @@ import com.event.events.repository.UserRepository;
 import com.event.events.util.OtpUtil;
 import com.event.events.util.PasswordUtil;
 import com.event.events.util.TokenUtil;
+import jakarta.security.auth.message.AuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,9 +35,6 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
 
-    /* =========================================================
-       LOGIN
-    ========================================================= */
     public AuthResponse login(LoginRequest request) {
         try {
             User user = getUserOrFail(request.getEmail());
@@ -69,9 +67,6 @@ public class AuthService {
         }
     }
 
-    /* =========================================================
-       REGISTER
-    ========================================================= */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         try {
@@ -102,9 +97,6 @@ public class AuthService {
         }
     }
 
-    /* =========================================================
-       EMAIL VERIFICATION
-    ========================================================= */
     public AuthResponse verifyEmail(String email, String otp) {
         try {
             Otp record = validateOtp(email, otp);
@@ -134,9 +126,6 @@ public class AuthService {
         }
     }
 
-    /* =========================================================
-       FORGOT PASSWORD
-    ========================================================= */
     public AuthResponse forgotPassword(String email) {
         try {
             validateEmailFormat(email);
@@ -167,9 +156,6 @@ public class AuthService {
         }
     }
 
-    /* =========================================================
-       REFRESH TOKEN
-    ========================================================= */
     public AuthResponse refresh(String refreshToken) {
         try {
             String userId = jwtService.extractUserIdFromRefreshToken(refreshToken);
@@ -191,9 +177,6 @@ public class AuthService {
         }
     }
 
-    /* =========================================================
-       RESEND OTP
-    ========================================================= */
     public AuthResponse resendOtp(String email) {
         try {
             User user = getUserOrFail(email);
@@ -210,9 +193,6 @@ public class AuthService {
         }
     }
 
-    /* =========================================================
-       PRIVATE HELPERS
-    ========================================================= */
 
     private User getUserOrFail(String email) {
         return userRepository.findByEmail(email)
