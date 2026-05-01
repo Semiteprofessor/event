@@ -293,34 +293,5 @@ public class AuthService {
                 + "/auth/reset-password?token=" + token;
     }
 
-    /* =========================================================
-       RESPONSE HELPERS
-    ========================================================= */
 
-    private AuthResponse success(String msg, Object data,
-                                 String access, String refresh, String role) {
-        return new AuthResponse(200, new ApiResponse(true, msg, data),
-                access, refresh, role);
-    }
-
-    private AuthResponse ok(String msg) {
-        return new AuthResponse(200, new ApiResponse(true, msg), null);
-    }
-
-    private AuthResponse created(String msg, Object data) {
-        return new AuthResponse(201, new ApiResponse(true, msg, data), null);
-    }
-
-    private AuthResponse unauthorized(String msg) {
-        return new AuthResponse(401, new ApiResponse(false, msg), null);
-    }
-
-    private AuthResponse forbidden(String msg) {
-        return new AuthResponse(403, new ApiResponse(false, msg), null);
-    }
-
-    private AuthResponse serverError() {
-        return new AuthResponse(500,
-                new ApiResponse(false, "Internal Server Error"), null);
-    }
 }

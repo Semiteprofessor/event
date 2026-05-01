@@ -1,9 +1,6 @@
 package com.event.events.controller;
 
-import com.event.events.dto.request.LoginRequest;
-import com.event.events.dto.request.RegisterRequest;
-import com.event.events.dto.request.ResetPasswordRequest;
-import com.event.events.dto.request.ForgotPasswordRequest;
+import com.event.events.dto.request.*;
 import com.event.events.dto.response.ApiResponse;
 import com.event.events.dto.response.AuthResponse;
 import com.event.events.service.AuthService;
@@ -69,7 +66,6 @@ public class AuthController {
                 .body(response.getBody());
     }
 
-    // ✅ EMAIL VERIFY
     @PostMapping("/verify-email")
     public ResponseEntity<?> emailVerify(@RequestBody EmailVerifyRequest request) {
 
@@ -83,7 +79,6 @@ public class AuthController {
                 .body(response.getBody());
     }
 
-    // ✅ FORGOT PASSWORD
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
 
