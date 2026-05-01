@@ -95,32 +95,28 @@ public class AuthService {
     }
 
     public AuthResponse verifyEmail(String email, String otp) {
-        try {
-            Otp record = validateOtp(email, otp);
 
-            if (isOtpExpired(record)) {
-                resendOtp(email);
-                return ResponseHelper.unauthorized("OTP expired. New OTP sent.");
-            }
+        Otp record = validateOtp(email, otp);
 
-            User user = getUserOrFail(email);
-            user.setEmailVerified(true);
-            userRepository.save(user);
+        handleExpiredOtp(record, email);
 
-            otpRepository.deleteByEmail(email);
+        User user = getUserOrFail(email);
 
-            String token = jwtService.generateToken(user);
+        activateUser(user);
 
-            log.info("User verified: {}", email);
+        clearOtp(email);
 
-            return ResponseHelper.success("Account verified successfully!", null, token, null, null);
+        String token = jwtService.generateToken(user);
 
-        } catch (AuthException ex) {
-            return ex.toResponse();
-        } catch (Exception ex) {
-            log.error("Verification error", ex);
-            return serverError();
-        }
+        log.info("User verified: {}", email);
+
+        return ResponseHelper.success(
+                "Account verified successfully!",
+                null,
+                token,
+                null,
+                null
+        );
     }
 
     public AuthResponse forgotPassword(String email) {
