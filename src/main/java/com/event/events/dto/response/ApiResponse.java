@@ -3,9 +3,17 @@ package com.event.events.dto.response;
 import lombok.*;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class ApiResponse {
+@AllArgsConstructor
+@Builder
+public class ApiResponse<T> {
+
     private boolean status;
     private String message;
+    private T data;
+
+    public ApiResponse(boolean status, String message) {
+        this.status = status;
+        this.message = message;
+    }
 }
