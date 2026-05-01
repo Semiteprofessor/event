@@ -45,7 +45,7 @@ public class AuthService {
 
         if (!user.isEmailVerified()) {
             resendOtpInternal(user);
-            throw new AuthException(403, "Please verify your email. OTP sent.");
+            throw new com.event.events.exception.AuthException(403, "Please verify your email. OTP sent.");
         }
 
         validateRole(user);
@@ -71,32 +71,27 @@ public class AuthService {
 
     @Transactional
     public AuthResponse registerUser(RegisterRequest request) {
-        try {
-            validatePasswordPresence(request.getPassword());
 
-            Optional<User> existing = userRepository.findByEmail(request.getEmail());
+        validatePasswordPresence(request.getPassword());
 
-            if (existing.isPresent()) {
-                return handleExistingUser(existing.get(), request.getName());
-            }
+        userRepository.findByEmail(request.getEmail())
+                .ifPresent(user -> {
+                    if (user.isEmailVerified()) {
+                        throw new AuthException(403, "User already exists and is verified");
+                    }
+                    handleExistingUser(user, request.getName());
+                });
 
-            User user = createNewUser(request);
+        User user = createNewUser(request);
 
-            sendAndPersistOtp(user);
+        sendAndPersistOtp(user);
 
-            log.info("User registered: {}", user.getEmail());
+        log.info("User registered: {}", user.getEmail());
 
-            return ResponseHelper.created(
-                    "Registration successful. Please verify your email.",
-                    user
-            );
-
-        } catch (AuthException ex) {
-            return ex.toResponse();
-        } catch (Exception ex) {
-            log.error("Registration error", ex);
-            return serverError();
-        }
+        return ResponseHelper.created(
+                "Registration successful. Please verify your email.",
+                sanitizeUser(user)
+        );
     }
 
     public AuthResponse verifyEmail(String email, String otp) {
