@@ -6,23 +6,22 @@ import org.springframework.http.HttpStatus;
 
 public final class ResponseHelper {
 
-    private ResponseHelper() {
-        // Prevent instantiation
+    private ResponseHelper() {}
+
+    public static <T> ApiResponse<T> ok(String message, T data) {
+        return new ApiResponse<>(true, message, data);
     }
 
-    public static ApiResponse success(String message, Object data) {
-        return new ApiResponse(true, message, data);
+    public static ApiResponse<Void> ok(String message) {
+        return new ApiResponse<>(true, message, null);
     }
 
-    public static ApiResponse success(String message) {
-        return new ApiResponse(true, message);
+    public static ApiResponse<Void> error(String message) {
+        return new ApiResponse<>(false, message, null);
     }
 
-    public static ApiResponse error(String message) {
-        return new ApiResponse(false, message);
-    }
-
-    public static AuthResponse authSuccess(
+    public static AuthResponse auth(
+            HttpStatus status,
             String message,
             Object data,
             String accessToken,
@@ -30,50 +29,37 @@ public final class ResponseHelper {
             String role
     ) {
         return new AuthResponse(
-                HttpStatus.OK.value(),
-                success(message, data),
+                status.value(),
+                ok(message, data),
                 accessToken,
                 refreshToken,
                 role
         );
     }
 
-    public static AuthResponse ok(String message) {
-        return new AuthResponse(
-                HttpStatus.OK.value(),
-                success(message),
-                null
-        );
+    public static AuthResponse authOk(String message, Object data) {
+        return auth(HttpStatus.OK, message, data, null, null, null);
     }
 
     public static AuthResponse created(String message, Object data) {
-        return new AuthResponse(
-                HttpStatus.CREATED.value(),
-                success(message, data),
-                null
-        );
-    }
-
-    public static AuthResponse unauthorized(String message) {
-        return new AuthResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                error(message),
-                null
-        );
+        return auth(HttpStatus.CREATED, message, data, null, null, null);
     }
 
     public static AuthResponse forbidden(String message) {
-        return new AuthResponse(
-                HttpStatus.FORBIDDEN.value(),
-                error(message),
-                null
-        );
+        return auth(HttpStatus.FORBIDDEN, message, null, null, null, null);
+    }
+
+    public static AuthResponse unauthorized(String message) {
+        return auth(HttpStatus.UNAUTHORIZED, message, null, null, null, null);
     }
 
     public static AuthResponse serverError() {
-        return new AuthResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                error("Internal Server Error"),
+        return auth(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Internal Server Error",
+                null,
+                null,
+                null,
                 null
         );
     }

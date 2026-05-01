@@ -15,6 +15,7 @@ import com.event.events.util.TokenUtil;
 import jakarta.security.auth.message.AuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,14 +57,15 @@ public class AuthService {
 
         log.info("Login successful for {}", user.getEmail());
 
-        user.setPassword(null);
+        User safeUser = sanitizeUser(user);
 
-        return ResponseHelper.success(
+        return ResponseHelper.auth(
+                HttpStatus.OK,
                 "Login successful",
-                user,
+                safeUser,
                 accessToken,
                 refreshToken,
-                user.getRole()
+                String.valueOf(user.getRole())
         );
     }
 
@@ -290,6 +292,19 @@ public class AuthService {
     private String buildResetLink(String token) {
         return System.getenv("FRONTEND_REMOTE_URL")
                 + "/auth/reset-password?token=" + token;
+    }
+
+    private User sanitizeUser(User user) {
+        User safe = new User();
+
+        safe.setId(user.getId());
+        safe.setName(user.getName());
+        safe.setEmail(user.getEmail());
+        safe.setRole(user.getRole());
+        safe.setEmailVerified(user.isEmailVerified());
+        safe.setAdmin(user.isAdmin());
+
+        return safe;
     }
 
 
