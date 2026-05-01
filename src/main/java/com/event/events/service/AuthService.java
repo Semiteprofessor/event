@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -121,32 +122,16 @@ public class AuthService {
     }
 
     public AuthResponse forgotPassword(String email) {
-        try {
-            validateEmailFormat(email);
 
-            Optional<User> userOpt = userRepository.findByEmail(email);
+        validateEmailFormat(email);
 
-            if (userOpt.isEmpty()) {
-                return ResponseHelper.ok("Check your mail if registered.");
-            }
+        userRepository.findByEmail(email)
+                .ifPresent(this::processPasswordReset);
 
-            User user = userOpt.get();
-
-            String token = TokenUtil.generateSecureToken(64);
-
-            user.setResetToken(token);
-            userRepository.save(user);
-
-            String link = buildResetLink(token);
-
-            emailService.sendOtp(email, link, user.getName(), "Password Reset");
-
-            return ok("Password reset link sent.");
-
-        } catch (Exception ex) {
-            log.error("Forgot password error", ex);
-            return serverError();
-        }
+        // Always return same response (security best practice)
+        return ResponseHelper.ok(
+                "If the email exists, a reset link has been sent."
+        );
     }
 
     public AuthResponse refreshToken(String refreshToken) {
@@ -313,5 +298,28 @@ public class AuthService {
 
     private void clearOtp(String email) {
         otpRepository.deleteByEmail(email);
+    }
+
+    private void processPasswordReset(User user) {
+
+        String token = TokenUtil.generateSecureToken(64);
+
+        user.setResetToken(token);
+        user.setResetTokenExpires(
+                new Date(System.currentTimeMillis() + 1000 * 60 * 15)
+        );
+
+        userRepository.save(user);
+
+        String link = buildResetLink(token);
+
+        emailService.sendOtp(
+                user.getEmail(),
+                link,
+                user.getName(),
+                "Password Reset"
+        );
+
+        log.info("Password reset email sent to {}", user.getEmail());
     }
 }
