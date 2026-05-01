@@ -35,7 +35,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse loginUser(LoginRequest request) {
         try {
             User user = getUserOrFail(request.getEmail());
 
@@ -68,7 +68,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponse registerUser(RegisterRequest request) {
         try {
             validatePasswordPresence(request.getPassword());
 
@@ -156,7 +156,7 @@ public class AuthService {
         }
     }
 
-    public AuthResponse refresh(String refreshToken) {
+    public AuthResponse refreshToken(String refreshToken) {
         try {
             String userId = jwtService.extractUserIdFromRefreshToken(refreshToken);
 

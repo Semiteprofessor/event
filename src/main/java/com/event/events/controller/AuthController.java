@@ -1,7 +1,12 @@
 package com.event.events.controller;
 
+import com.event.events.dto.request.LoginRequest;
+import com.event.events.dto.request.RegisterRequest;
 import com.event.events.dto.request.ResetPasswordRequest;
 import com.event.events.dto.request.ForgotPasswordRequest;
+import com.event.events.dto.response.ApiResponse;
+import com.event.events.dto.response.AuthResponse;
+import com.event.events.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +22,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // ✅ REGISTER
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
 
@@ -28,7 +32,6 @@ public class AuthController {
                 .body(authService.registerUser(request).getBody());
     }
 
-    // ✅ LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequest request) {
 
@@ -42,7 +45,6 @@ public class AuthController {
                 .body(response.getBody());
     }
 
-    // ✅ REFRESH TOKEN
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(
             @CookieValue(value = "refreshToken", required = false) String cookieToken,
