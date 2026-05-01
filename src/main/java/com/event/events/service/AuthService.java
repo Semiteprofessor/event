@@ -4,6 +4,7 @@ import com.event.events.dto.request.LoginRequest;
 import com.event.events.dto.request.RegisterRequest;
 import com.event.events.dto.response.ApiResponse;
 import com.event.events.dto.response.AuthResponse;
+import com.event.events.exception.AuthException;
 import com.event.events.model.Otp;
 import com.event.events.model.User;
 import com.event.events.repository.OtpRepository;
@@ -12,7 +13,6 @@ import com.event.events.util.OtpUtil;
 import com.event.events.util.PasswordUtil;
 import com.event.events.util.ResponseHelper;
 import com.event.events.util.TokenUtil;
-import jakarta.security.auth.message.AuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -45,7 +45,7 @@ public class AuthService {
 
         if (!user.isEmailVerified()) {
             resendOtpInternal(user);
-            throw new com.event.events.exception.AuthException(403, "Please verify your email. OTP sent.");
+            throw new AuthException(403, "Please verify your email. OTP sent.");
         }
 
         validateRole(user);
@@ -110,7 +110,8 @@ public class AuthService {
 
         log.info("User verified: {}", email);
 
-        return ResponseHelper.success(
+        return ResponseHelper.auth(
+                HttpStatus.OK,
                 "Account verified successfully!",
                 null,
                 token,
@@ -298,5 +299,19 @@ public class AuthService {
         return safe;
     }
 
+    private void handleExpiredOtp(Otp record, String email) {
+        if (!isOtpExpired(record)) return;
 
+        resendOtp(email);
+        throw new AuthException(401, "OTP expired. New OTP sent.");
+    }
+
+    private void activateUser(User user) {
+        user.setEmailVerified(true);
+        userRepository.save(user);
+    }
+
+    private void clearOtp(String email) {
+        otpRepository.deleteByEmail(email);
+    }
 }
