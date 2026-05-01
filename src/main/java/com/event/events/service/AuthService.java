@@ -10,6 +10,7 @@ import com.event.events.repository.OtpRepository;
 import com.event.events.repository.UserRepository;
 import com.event.events.util.OtpUtil;
 import com.event.events.util.PasswordUtil;
+import com.event.events.util.ResponseHelper;
 import com.event.events.util.TokenUtil;
 import jakarta.security.auth.message.AuthException;
 import lombok.RequiredArgsConstructor;
@@ -36,35 +37,34 @@ public class AuthService {
     private final EmailService emailService;
 
     public AuthResponse loginUser(LoginRequest request) {
-        try {
-            User user = getUserOrFail(request.getEmail());
 
-            validatePassword(request.getPassword(), user);
+        User user = getUserOrFail(request.getEmail());
 
-            if (!user.isEmailVerified()) {
-                resendOtpInternal(user);
-                return forbidden("Please verify your email. OTP sent.");
-            }
+        validatePassword(request.getPassword(), user);
 
-            validateRole(user);
-
-            String accessToken = jwtService.generateToken(user);
-            String refreshToken = jwtService.generateRefreshToken(user);
-
-            persistRefreshToken(user, refreshToken);
-
-            log.info("Login successful for {} (role: {})", user.getEmail(), user.getRole());
-
-            user.setPassword(null);
-
-            return success("Login successful", user, accessToken, refreshToken, user.getRole());
-
-        } catch (AuthException ex) {
-            return ex.toResponse();
-        } catch (Exception ex) {
-            log.error("Login error", ex);
-            return serverError();
+        if (!user.isEmailVerified()) {
+            resendOtpInternal(user);
+            throw new AuthException(403, "Please verify your email. OTP sent.");
         }
+
+        validateRole(user);
+
+        String accessToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+
+        persistRefreshToken(user, refreshToken);
+
+        log.info("Login successful for {}", user.getEmail());
+
+        user.setPassword(null);
+
+        return ResponseHelper.success(
+                "Login successful",
+                user,
+                accessToken,
+                refreshToken,
+                user.getRole()
+        );
     }
 
     @Transactional
@@ -84,7 +84,7 @@ public class AuthService {
 
             log.info("User registered: {}", user.getEmail());
 
-            return created(
+            return ResponseHelper.created(
                     "Registration successful. Please verify your email.",
                     user
             );
@@ -103,7 +103,7 @@ public class AuthService {
 
             if (isOtpExpired(record)) {
                 resendOtp(email);
-                return unauthorized("OTP expired. New OTP sent.");
+                return ResponseHelper.unauthorized("OTP expired. New OTP sent.");
             }
 
             User user = getUserOrFail(email);
@@ -116,7 +116,7 @@ public class AuthService {
 
             log.info("User verified: {}", email);
 
-            return success("Account verified successfully!", null, token, null, null);
+            return ResponseHelper.success("Account verified successfully!", null, token, null, null);
 
         } catch (AuthException ex) {
             return ex.toResponse();
@@ -132,9 +132,8 @@ public class AuthService {
 
             Optional<User> userOpt = userRepository.findByEmail(email);
 
-            // Do not expose user existence
             if (userOpt.isEmpty()) {
-                return ok("Check your mail if registered.");
+                return ResponseHelper.ok("Check your mail if registered.");
             }
 
             User user = userOpt.get();
@@ -167,7 +166,7 @@ public class AuthService {
 
             String accessToken = jwtService.generateToken(user);
 
-            return success("Token refreshed", null, accessToken, null, null);
+            return ResponseHelper.success("Token refreshed", null, accessToken, null, null);
 
         } catch (AuthException ex) {
             return ex.toResponse();
@@ -183,7 +182,7 @@ public class AuthService {
 
             resendOtpInternal(user);
 
-            return ok("OTP resent successfully.");
+            return ResponseHelper.ok("OTP resent successfully.");
 
         } catch (AuthException ex) {
             return ex.toResponse();
@@ -200,7 +199,7 @@ public class AuthService {
     }
 
     private void validatePassword(String raw, User user) {
-        if (!PasswordUtil.matches(raw, user.getPassword())) {
+        if (!PasswordUtil.encode(raw, user.getPassword())) {
             throw new AuthException(401, "Invalid credentials");
         }
     }
@@ -222,7 +221,7 @@ public class AuthService {
             throw new AuthException(403, "User already exists");
         }
         resendOtpInternal(user);
-        return ok("OTP resent for verification");
+        return ResponseHelper.ok("OTP resent for verification");
     }
 
     private User createNewUser(RegisterRequest req) {
