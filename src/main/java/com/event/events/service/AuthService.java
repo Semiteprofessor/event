@@ -190,7 +190,7 @@ public class AuthService {
         return AuthResponse.ok("Logout successful");
     }
 
-    public AuthResponse socialAuth(User oauthUser) {
+    public AuthResponse socialLogin(User oauthUser) {
 
         if (oauthUser == null || oauthUser.getEmail() == null) {
             throw new AuthException(400, "Invalid social auth data");
@@ -207,12 +207,12 @@ public class AuthService {
 
         log.info("Social login successful: {}", user.getEmail());
 
-        return ResponseHelper.authSuccess(
+        return AuthResponse.success(
                 "Social login successful",
                 user,
                 accessToken,
                 refreshToken,
-                user.getRole()
+                String.valueOf(user.getRole())
         );
     }
 

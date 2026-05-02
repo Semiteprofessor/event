@@ -126,19 +126,12 @@ public class AuthController {
                 .body(response.getBody());
     }
 
-    @PostMapping("/social/callback")
-    public ResponseEntity<?> socialAuth(@RequestBody SocialUserRequest request) {
+    @PostMapping("/auth/social")
+    public ResponseEntity<?> socialAuth(@RequestBody User oauthUser) {
 
-        if (request.getEmail() == null) {
-            log.warn("Social auth callback missing email");
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse(false, "Missing user profile data"));
-        }
+        AuthResponse response = authService.socialLogin(oauthUser);
 
-        AuthResponse response = authService.socialAuth(request);
-
-        return ResponseEntity
-                .status(response.getStatus())
+        return ResponseEntity.status(response.getStatus())
                 .body(response.getBody());
     }
 }
