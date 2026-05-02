@@ -3,10 +3,12 @@ package com.event.events.controller;
 import com.event.events.dto.request.*;
 import com.event.events.dto.response.ApiResponse;
 import com.event.events.dto.response.AuthResponse;
+import com.event.events.model.User;
 import com.event.events.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -106,7 +108,7 @@ public class AuthController {
     @PostMapping("/resend-otp/{email}")
     public ResponseEntity<?> resendOtp(@PathVariable String email) {
 
-        AuthResponse response = authService.resendVerifyOtp(email);
+        AuthResponse response = authService.resendOtp(email);
 
         return ResponseEntity
                 .status(response.getStatus())
@@ -114,16 +116,16 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser(@RequestAttribute("userId") String userId) {
+    public ResponseEntity<?> logout(Authentication authentication) {
 
-        AuthResponse response = authService.logoutUser(userId);
+        User user = (User) authentication.getPrincipal();
 
-        return ResponseEntity
-                .status(response.getStatus())
+        AuthResponse response = authService.logoutUser(user);
+
+        return ResponseEntity.status(response.getStatus())
                 .body(response.getBody());
     }
 
-    // ✅ SOCIAL AUTH CALLBACK
     @PostMapping("/social/callback")
     public ResponseEntity<?> socialAuth(@RequestBody SocialUserRequest request) {
 

@@ -174,6 +174,62 @@ public class AuthService {
         return AuthResponse.ok("OTP resent successfully.");
     }
 
+    public AuthResponse logoutUser(User user) {
+
+        if (user == null) {
+            throw new AuthException(401, "User not authenticated");
+        }
+
+        user.setRefreshToken(null);
+        user.setRefreshTokenExpires(null);
+
+        userRepository.save(user);
+
+        log.info("User logged out: {}", user.getEmail());
+
+        return AuthResponse.ok("Logout successful");
+    }
+
+    public AuthResponse socialAuth(User oauthUser) {
+
+        if (oauthUser == null || oauthUser.getEmail() == null) {
+            throw new AuthException(400, "Invalid social auth data");
+        }
+
+        User user = userRepository.findByEmail(oauthUser.getEmail())
+                .orElseGet(() -> createSocialUser(oauthUser));
+
+        String accessToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+
+        user.setRefreshToken(refreshToken);
+        userRepository.save(user);
+
+        log.info("Social login successful: {}", user.getEmail());
+
+        return ResponseHelper.authSuccess(
+                "Social login successful",
+                user,
+                accessToken,
+                refreshToken,
+                user.getRole()
+        );
+    }
+
+    private User createSocialUser(User oauthUser) {
+
+        User newUser = User.builder()
+                .name(oauthUser.getName())
+                .email(oauthUser.getEmail())
+                .password(null)
+                .role(Role.GUEST)
+                .isEmailVerified(true)
+                .isAdmin(false)
+                .build();
+
+        return userRepository.save(newUser);
+    }
+
 
     private User getUserOrFail(String email) {
         return userRepository.findByEmail(email)
