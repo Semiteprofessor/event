@@ -128,31 +128,29 @@ public class AuthService {
         userRepository.findByEmail(email)
                 .ifPresent(this::processPasswordReset);
 
-        // Always return same response (security best practice)
-        return ResponseHelper.ok(
+        return AuthResponse.ok(
                 "If the email exists, a reset link has been sent."
         );
     }
 
     public AuthResponse refreshToken(String refreshToken) {
-        try {
-            String userId = jwtService.extractUserIdFromRefreshToken(refreshToken);
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new AuthException(401, "User not found"));
+        String userId = jwtService.extractUserIdFromRefreshToken(refreshToken);
 
-            validateStoredRefreshToken(user, refreshToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AuthException(401, "User not found"));
 
-            String accessToken = jwtService.generateToken(user);
+        validateStoredRefreshToken(user, refreshToken);
 
-            return ResponseHelper.success("Token refreshed", null, accessToken, null, null);
+        String accessToken = jwtService.generateToken(user);
 
-        } catch (AuthException ex) {
-            return ex.toResponse();
-        } catch (Exception ex) {
-            log.warn("Invalid refresh token attempt");
-            return unauthorized("Invalid or expired refresh token");
-        }
+        return AuthResponse.success(
+                "Token refreshed",
+                null,
+                accessToken,
+                null,
+                null
+        );
     }
 
     public AuthResponse resendOtp(String email) {
@@ -313,13 +311,22 @@ public class AuthService {
 
         String link = buildResetLink(token);
 
+        String message =
+                "Hello " + user.getName() +
+                        ", click the link below to reset your password:\n" + link;
+
         emailService.sendOtp(
                 user.getEmail(),
-                link,
-                user.getName(),
-                "Password Reset"
+                "Password Reset",
+                message
         );
 
         log.info("Password reset email sent to {}", user.getEmail());
+    }
+
+    private void validateEmailFormat(String email) {
+        if (email == null || !email.matches("^\\S+@\\S+\\.\\S+$")) {
+            throw new AuthException(400, "Invalid email format");
+        }
     }
 }

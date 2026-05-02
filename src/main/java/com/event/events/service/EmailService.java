@@ -11,13 +11,13 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    public void sendOtp(String email, String otp, String name) {
+    public void sendOtp(String email, String subject, String message) {
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Verify your email");
-        message.setText("Hello " + name + ", your OTP is: " + otp);
+        SimpleMailMessage mail = new SimpleMailMessage();
+        mail.setTo(email);
+        mail.setSubject(subject);
+        mail.setText(message);
 
-        mailSender.send(message);
+        mailSender.send(mail);
     }
 }

@@ -36,4 +36,50 @@ public class AuthResponse {
         this.refreshToken = refreshToken;
         this.role = role;
     }
+
+    public static AuthResponse ok(String message) {
+        return new AuthResponse(
+                200,
+                new ApiResponse(true, message),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static AuthResponse created(String message, Object data) {
+        return new AuthResponse(
+                201,
+                new ApiResponse(true, message, data),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static AuthResponse unauthorized(String message) {
+        return new AuthResponse(
+                401,
+                new ApiResponse(false, message),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static AuthResponse success(
+            String message,
+            Object data,
+            String accessToken,
+            String refreshToken,
+            String role
+    ) {
+        return new AuthResponse(
+                200,
+                new ApiResponse(true, message, data),
+                accessToken,
+                refreshToken,
+                role
+        );
+    }
 }
