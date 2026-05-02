@@ -4,6 +4,8 @@ import com.event.events.dto.request.LoginRequest;
 import com.event.events.dto.request.RegisterRequest;
 import com.event.events.dto.response.ApiResponse;
 import com.event.events.dto.response.AuthResponse;
+import com.event.events.enums.OtpType;
+import com.event.events.enums.Role;
 import com.event.events.exception.AuthException;
 import com.event.events.model.Otp;
 import com.event.events.model.User;
@@ -191,7 +193,7 @@ public class AuthService {
             throw new AuthException(403, "User already exists");
         }
         resendOtpInternal(user);
-        return ResponseHelper.ok("OTP resent for verification");
+        return AuthResponse.ok("OTP resent for verification");
     }
 
     private User createNewUser(RegisterRequest req) {
@@ -206,9 +208,8 @@ public class AuthService {
                 .name(req.getName())
                 .email(req.getEmail())
                 .password(PasswordUtil.encode(req.getPassword()))
-                .role(role)
+                .role(Role.valueOf(role))
                 .isAdmin(isAdmin)
-                .emailVerified(false)
                 .build();
 
         return userRepository.save(user);
@@ -230,7 +231,7 @@ public class AuthService {
         Otp entity = otpRepository.findByEmail(email).orElse(new Otp());
         entity.setEmail(email);
         entity.setOtp(otp);
-        entity.setOtpType("REGISTRATION");
+        entity.setOtpType(OtpType.REGISTRATION);
         otpRepository.save(entity);
     }
 
