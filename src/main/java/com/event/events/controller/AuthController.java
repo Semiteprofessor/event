@@ -96,7 +96,7 @@ public class AuthController {
     ) {
 
         AuthResponse response =
-                authService.(token, request.getNewPassword());
+                authService.resetPassword(token, request.getNewPassword());
 
         return ResponseEntity
                 .status(response.getStatus())
@@ -113,7 +113,6 @@ public class AuthController {
                 .body(response.getBody());
     }
 
-    // ✅ LOGOUT
     @PostMapping("/logout")
     public ResponseEntity<?> logoutUser(@RequestAttribute("userId") String userId) {
 

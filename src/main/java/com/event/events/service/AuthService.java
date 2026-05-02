@@ -302,6 +302,16 @@ public class AuthService {
         otpRepository.deleteByEmail(email);
     }
 
+    private void validateResetRequest(String token, String password) {
+        if (token == null || token.isBlank()) {
+            throw new AuthException(400, "Token is required");
+        }
+
+        if (password == null || password.isBlank()) {
+            throw new AuthException(400, "Password is required");
+        }
+    }
+
     private void processPasswordReset(User user) {
 
         String token = TokenUtil.generateSecureToken(64);
@@ -333,4 +343,5 @@ public class AuthService {
             throw new AuthException(400, "Invalid email format");
         }
     }
+
 }
