@@ -135,6 +135,16 @@ public class AuthService {
         );
     }
 
+    public AuthResponse resetPassword(String token, String newPassword) {
+
+        validateResetRequest(token, newPassword);
+
+        userRepository.findByResetToken(token)
+                .ifPresent(this::processPasswordReset);
+
+        return AuthResponse.ok("If the token is valid, password has been reset.");
+    }
+
     public AuthResponse refreshToken(String refreshToken) {
 
         String userId = jwtService.extractUserIdFromRefreshToken(refreshToken);

@@ -38,7 +38,7 @@ public class AuthController {
 
         return ResponseEntity
                 .status(response.getStatus())
-                .header("Authorization", "Bearer " + response.getToken())
+                .header("Authorization", "Bearer " + response.getAccessToken())
                 .body(response.getBody());
     }
 
@@ -89,7 +89,6 @@ public class AuthController {
                 .body(response.getBody());
     }
 
-    // ✅ RESET PASSWORD
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(
             @RequestParam String token,
@@ -97,14 +96,13 @@ public class AuthController {
     ) {
 
         AuthResponse response =
-                authService.resetPassword(token, request.getNewPassword());
+                authService.(token, request.getNewPassword());
 
         return ResponseEntity
                 .status(response.getStatus())
                 .body(response.getBody());
     }
 
-    // ✅ RESEND OTP
     @PostMapping("/resend-otp/{email}")
     public ResponseEntity<?> resendOtp(@PathVariable String email) {
 
