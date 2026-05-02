@@ -154,19 +154,12 @@ public class AuthService {
     }
 
     public AuthResponse resendOtp(String email) {
-        try {
-            User user = getUserOrFail(email);
 
-            resendOtpInternal(user);
+        User user = getUserOrFail(email);
 
-            return ResponseHelper.ok("OTP resent successfully.");
+        resendOtpInternal(user);
 
-        } catch (AuthException ex) {
-            return ex.toResponse();
-        } catch (Exception ex) {
-            log.error("Resend OTP error", ex);
-            return serverError();
-        }
+        return AuthResponse.ok("OTP resent successfully.");
     }
 
 
@@ -176,7 +169,7 @@ public class AuthService {
     }
 
     private void validatePassword(String raw, User user) {
-        if (!PasswordUtil.encode(raw, user.getPassword())) {
+        if (!PasswordUtil.matches(raw, user.getPassword())) {
             throw new AuthException(401, "Invalid credentials");
         }
     }
