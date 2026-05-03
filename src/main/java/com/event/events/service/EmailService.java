@@ -84,5 +84,45 @@ public class EmailService {
         }
     }
 
+    public void sendEventCreatedEmail(
+            String to,
+            String subject,
+            String eventName,
+            String eventDate,
+            String eventTime,
+            String role
+    ) {
+        try {
+            Context context = new Context();
 
+            context.setVariable("subject", subject);
+            context.setVariable("bannerTitle", eventName);
+            context.setVariable("role", role);
+            context.setVariable("eventName", eventName);
+            context.setVariable("eventDate", eventDate);
+            context.setVariable("eventTime", eventTime);
+
+            String html = templateEngine.process(
+                    "eventCreated",
+                    context
+            );
+
+            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Failed to send event created email",
+                    e
+            );
+        }
+    }
 }

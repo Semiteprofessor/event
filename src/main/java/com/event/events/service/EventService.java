@@ -47,8 +47,12 @@ public class EventService {
         Event saved = eventRepository.save(event);
 
         emailService.sendEventCreatedEmail(
-                user.getEmail(),
-                saved.getName()
+                request.getOrganizerEmail(),
+                "Ganusi: Event Created",
+                event.getName(),
+                event.getDate().toString(),
+                event.getStartTime(),
+                "Organizer"
         );
 
         return saved;
