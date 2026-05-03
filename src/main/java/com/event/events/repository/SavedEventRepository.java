@@ -10,5 +10,15 @@ public interface SavedEventRepository extends JpaRepository<SavedEvent, String> 
 
     List<SavedEvent> findByEvent(String eventId);
 
-    boolean existsByGuestAndEvent(String guestId, String eventId);
+
+    boolean existsByGuestAndEvent(
+            String guest,
+            String event
+    );
+
+    void deleteByGuestAndEvent(
+            String guest,
+            String event
+    );
+
 }
