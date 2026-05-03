@@ -39,25 +39,34 @@ public class BookingService {
 
         int totalTickets = 0;
 
-        for (BookingTicket ticket : request.getTickets()) {
+        for (BookingTicketRequest ticketReq : request.getTickets()) {
 
             TicketType eventTicket = event.getTicketTypes().stream()
-                    .filter(t -> t.getType().equalsIgnoreCase(ticket.getType()))
+                    .filter(t -> t.getType().equalsIgnoreCase(ticketReq.getType()))
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
-            if (eventTicket.getRemaining() < ticket.getCount()) {
+            if (eventTicket.getRemaining() < ticketReq.getCount()) {
                 throw new RuntimeException("Not enough tickets");
             }
 
             BigDecimal total =
-                    eventTicket.getPrice().multiply(BigDecimal.valueOf(ticket.getCount()));
+                    eventTicket.getPrice()
+                            .multiply(BigDecimal.valueOf(ticketReq.getCount()));
 
-            eventTicket.setRemaining(eventTicket.getRemaining() - ticket.getCount());
-            ticket.setPrice(eventTicket.getPrice());
-            ticket.setTotalAmount(total);
+            eventTicket.setRemaining(
+                    eventTicket.getRemaining() - ticketReq.getCount()
+            );
 
-            if (event.isAllowInstallment() && ticket.isInstallment()) {
+            BookingTicket bookingTicket = BookingTicket.builder()
+                    .type(ticketReq.getType())
+                    .count(ticketReq.getCount())
+                    .price(eventTicket.getPrice())
+                    .totalAmount(total)
+                    .installment(ticketReq.isInstallment())
+                    .build();
+
+            if (event.isAllowInstallment() && ticketReq.isInstallment()) {
 
                 InstallmentDetails details = new InstallmentDetails();
 
@@ -69,14 +78,16 @@ public class BookingService {
                 details.setTotalPaid(BigDecimal.ZERO);
                 details.setRemainingAmount(total);
 
-                ticket.setPaymentType(PaymentType.INSTALLMENT);
-                ticket.setInstallmentDetails(details);
+                bookingTicket.setPaymentType(PaymentType.INSTALLMENT);
+                bookingTicket.setInstallmentDetails(details);
 
             } else {
-                ticket.setPaymentType(PaymentType.ONE_OFF);
+                bookingTicket.setPaymentType(PaymentType.ONE_OFF);
             }
 
-            totalTickets += ticket.getCount();
+            bookingTickets.add(bookingTicket);
+
+            totalTickets += ticketReq.getCount();
         }
 
         eventRepository.save(event);

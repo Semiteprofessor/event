@@ -6,7 +6,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -29,8 +30,10 @@ public class BookingTicket {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentType paymentType;
+    @Builder.Default
+    private PaymentType paymentType = PaymentType.ONE_OFF;
 
+    @Builder.Default
     @Embedded
-    private InstallmentDetails installmentDetails;
+    private InstallmentDetails installmentDetails = new InstallmentDetails();
 }

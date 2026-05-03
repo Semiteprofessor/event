@@ -1,8 +1,8 @@
 package com.event.events.dto.request;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
@@ -12,7 +12,7 @@ public class BookingTicketRequest {
     private String type;
 
     @NotNull(message = "Ticket count is required")
-    @Min(value = 1, message = "Minimum ticket count is 1")
+    @Positive(message = "Ticket count must be at least 1")
     private Integer count;
 
     private boolean installment;
