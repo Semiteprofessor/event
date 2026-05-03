@@ -1,10 +1,10 @@
 package com.event.events.dto.request;
 
-import com.event.events.model.embeded.BookingTicket;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.util.List;
@@ -16,10 +16,10 @@ public class BookingRequest {
     @NotBlank
     private String userEmail;
 
-    @NotBlank
-    private String event;
+    @NotNull
+    private String eventId;
 
     @Valid
     @NotEmpty
-    private List<BookingTicket> tickets;
+    private List<BookingTicketRequest> tickets;
 }

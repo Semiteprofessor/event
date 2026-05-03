@@ -1,6 +1,7 @@
 package com.event.events.service;
 
 import com.event.events.dto.request.BookingRequest;
+import com.event.events.dto.request.BookingTicketRequest;
 import com.event.events.dto.request.InstallmentPaymentRequest;
 import com.event.events.enums.BookingStatus;
 import com.event.events.enums.PaymentType;
