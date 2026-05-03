@@ -2,18 +2,16 @@ package com.event.events.service;
 
 import com.event.events.dto.request.BookingRequest;
 import com.event.events.dto.request.InstallmentPaymentRequest;
+import com.event.events.enums.BookingStatus;
 import com.event.events.enums.PaymentType;
-import com.event.events.exception.AuthException;
 import com.event.events.model.Booking;
 import com.event.events.model.Event;
-import com.event.events.model.Ticket;
 import com.event.events.model.embeded.BookingTicket;
 import com.event.events.model.embeded.InstallmentDetails;
 import com.event.events.model.Payment;
 import com.event.events.model.embeded.TicketType;
 import com.event.events.repository.BookingRepository;
 import com.event.events.repository.EventRepository;
-import com.event.events.repository.TicketRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,239 +19,144 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
-    private final TicketRepository ticketRepository;
     private final EmailService emailService;
 
     @Transactional
     public Booking createBooking(BookingRequest request) {
 
-        Event event = eventRepository.findById(request.getEvent())
-                .orElseThrow(() ->
-                        new AuthException(404, "Event not found"));
+        Event event = eventRepository.findById(request.getEventId())
+                .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        List<TicketType> eventTickets = event.getTicketTypes();
+        int totalTickets = 0;
 
-        int totalCount = 0;
+        for (BookingTicket ticket : request.getTickets()) {
 
-        for (BookingTicket bookingTicket : request.getTickets()) {
-
-            TicketType eventTicket = eventTickets.stream()
-                    .filter(t ->
-                            t.getType()
-                                    .equalsIgnoreCase(
-                                            bookingTicket.getType()
-                                    )
-                    )
+            TicketType eventTicket = event.getTicketTypes().stream()
+                    .filter(t -> t.getType().equalsIgnoreCase(ticket.getType()))
                     .findFirst()
-                    .orElseThrow(() ->
-                            new AuthException(
-                                    400,
-                                    "Ticket type not found"
-                            ));
+                    .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
-            int count = bookingTicket.getCount();
-
-            if (eventTicket.getRemaining() < count) {
-                throw new AuthException(
-                        400,
-                        "Not enough tickets available"
-                );
+            if (eventTicket.getRemaining() < ticket.getCount()) {
+                throw new RuntimeException("Not enough tickets");
             }
 
             BigDecimal total =
-                    eventTicket.getPrice()
-                            .multiply(BigDecimal.valueOf(count));
+                    eventTicket.getPrice().multiply(BigDecimal.valueOf(ticket.getCount()));
 
-            bookingTicket.setPrice(eventTicket.getPrice());
-            bookingTicket.setTotalAmount(total);
+            eventTicket.setRemaining(eventTicket.getRemaining() - ticket.getCount());
+            ticket.setPrice(eventTicket.getPrice());
+            ticket.setTotalAmount(total);
 
-            if (bookingTicket.isInstallment()) {
+            if (event.isAllowInstallment() && ticket.isInstallment()) {
 
-                int installments =
-                        event.getInstallmentConfig()
-                                .getNumberOfInstallments();
+                InstallmentDetails details = new InstallmentDetails();
 
-                InstallmentDetails details =
-                        new InstallmentDetails();
+                int inst = event.getInstallmentConfig().getNumberOfInstallments();
 
-                details.setNumberOfInstallments(installments);
-
-                details.setAmountPerInstallment(
-                        total.divide(
-                                BigDecimal.valueOf(installments)
-                        )
-                );
-
+                details.setNumberOfInstallments(inst);
                 details.setInstallmentsPaid(0);
-                details.setRemainingAmount(total);
+                details.setInstallmentsLeft(inst);
                 details.setTotalPaid(BigDecimal.ZERO);
-                details.setPayments(new ArrayList<>());
+                details.setRemainingAmount(total);
 
-                bookingTicket.setPaymentType(
-                        PaymentType.INSTALLMENT
-                );
-
-                bookingTicket.setInstallmentDetails(details);
+                ticket.setPaymentType(PaymentType.INSTALLMENT);
+                ticket.setInstallmentDetails(details);
 
             } else {
-                bookingTicket.setPaymentType(
-                        PaymentType.ONE_OFF
-                );
+                ticket.setPaymentType(PaymentType.ONE_OFF);
             }
 
-            eventTicket.setRemaining(
-                    eventTicket.getRemaining() - count
-            );
-
-            totalCount += count;
+            totalTickets += ticket.getCount();
         }
 
         eventRepository.save(event);
 
-        Booking booking = Booking.builder()
-                .userEmail(request.getUserEmail())
-                .event(request.getEvent())
-                .tickets(request.getTickets())
-                .ticketsCount(totalCount)
-                .createdAt(Instant.now())
-                .build();
+        Booking booking = new Booking();
+        booking.setUserEmail(request.getUserEmail());
+        booking.setEventId(event.getId());
+        booking.setTickets(request.getTickets());
+        booking.setTicketsCount(totalTickets);
+        booking.setStatus(BookingStatus.PAID);
+        booking.setCreatedAt(Instant.now());
 
-        Booking saved = bookingRepository.save(booking);
-
-        createTickets(saved);
-
-        return saved;
+        return bookingRepository.save(booking);
     }
 
     @Transactional
-    public Booking payInstallment(
-            InstallmentPaymentRequest request,
-            String email
-    ) {
+    public Booking payInstallment(InstallmentPaymentRequest request, String email) {
 
-        Booking booking = bookingRepository.findById(
-                        request.getBookingId()
-                )
-                .orElseThrow(() ->
-                        new AuthException(404, "Booking not found"));
+        Booking booking = bookingRepository.findById(request.getBookingId())
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        BookingTicket ticket = booking.getTickets()
-                .stream()
-                .filter(t ->
-                        t.getType().equalsIgnoreCase(
-                                request.getTicketName()
-                        ) && t.isInstallment()
-                )
+        BookingTicket ticket = booking.getTickets().stream()
+                .filter(t -> t.getType().equalsIgnoreCase(request.getTicketName()))
                 .findFirst()
-                .orElseThrow(() ->
-                        new AuthException(
-                                400,
-                                "Installment ticket not found"
-                        ));
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
-        InstallmentDetails details =
-                ticket.getInstallmentDetails();
+        InstallmentDetails details = ticket.getInstallmentDetails();
 
         BigDecimal amount = BigDecimal.valueOf(request.getAmount());
 
-        details.setTotalPaid(
-                details.getTotalPaid().add(amount)
-        );
-
-        details.setInstallmentsPaid(
-                details.getInstallmentsPaid() + 1
-        );
-
+        details.setTotalPaid(details.getTotalPaid().add(amount));
+        details.setInstallmentsPaid(details.getInstallmentsPaid() + 1);
         details.setRemainingAmount(
                 details.getRemainingAmount().subtract(amount)
         );
 
         Payment payment = new Payment();
-
         payment.setAmount(amount);
         payment.setReference(request.getReference());
         payment.setCreatedAt(Instant.now());
 
         details.getPayments().add(payment);
 
-        bookingRepository.save(booking);
+        booking.setStatus(
+                details.getRemainingAmount().compareTo(BigDecimal.ZERO) <= 0
+                        ? "paid"
+                        : "partial"
+        );
+
+        Booking saved = bookingRepository.save(booking);
 
         try {
             emailService.sendInstallmentPaymentMail(
                     booking.getUserEmail(),
                     booking.getUserEmail(),
-                    "Installment Payment Update",
-                    booking.getEvent().toString(),
+                    "Installment Update",
+                    String.valueOf(booking.getEventId()),
                     ticket.getType(),
                     amount.doubleValue(),
                     details.getTotalPaid().doubleValue(),
                     details.getRemainingAmount().doubleValue(),
                     details.getInstallmentsPaid(),
                     details.getNumberOfInstallments(),
-                    "installmentPaymentHistory.hbs",
-                    getFormattedDateTime()
+                    "installment.hbs",
+                    LocalDateTime.now().toString()
             );
-
-        } catch (Exception ex) {
-            log.error("Failed to send installment email", ex);
+        } catch (Exception e) {
+            log.error("Email failed", e);
         }
 
-        return booking;
+        return saved;
     }
 
-    private String getFormattedDateTime() {
-        return java.time.LocalDateTime
-                .now()
-                .format(
-                        java.time.format.DateTimeFormatter.ofPattern(
-                                "yyyy-MM-dd HH:mm:ss"
-                        )
-                );
+    @Override
+    public Booking getBookingById(Long id) {
+        return bookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
     }
 
-    public Booking getBookingById(String bookingId) {
-
-        return bookingRepository.findById(bookingId)
-                .orElseThrow(() ->
-                        new AuthException(
-                                404,
-                                "Booking not found"
-                        ));
-    }
-
-    public List<Booking> getBookingsByUser(String email) {
-
+    @Override
+    public List<Booking> getMyBookings(String email) {
         return bookingRepository.findByUserEmail(email);
-    }
-
-    private void createTickets(Booking booking) {
-
-        for (BookingTicket ticket : booking.getTickets()) {
-
-            for (int i = 0; i < ticket.getCount(); i++) {
-
-                Ticket generated = Ticket.builder()
-                        .booking(booking.getId())
-                        .event(booking.getEvent())
-                        .ticketType(ticket.getType())
-                        .userEmail(booking.getUserEmail())
-                        .price(ticket.getPrice())
-                        .totalAmount(ticket.getTotalAmount())
-                        .createdAt(Instant.now())
-                        .build();
-
-                ticketRepository.save(generated);
-            }
-        }
     }
 }
