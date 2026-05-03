@@ -63,7 +63,11 @@ public class BookingService {
                     .count(ticketReq.getCount())
                     .price(eventTicket.getPrice())
                     .totalAmount(total)
-                    .installment(ticketReq.isInstallment())
+                    .paymentType(
+                            ticketReq.isInstallment()
+                                    ? PaymentType.INSTALLMENT
+                                    : PaymentType.ONE_OFF
+                    )
                     .build();
 
             if (event.isAllowInstallment() && ticketReq.isInstallment()) {
@@ -74,7 +78,10 @@ public class BookingService {
 
                 details.setNumberOfInstallments(inst);
                 details.setInstallmentsPaid(0);
-                details.setInstallmentsLeft(inst);
+                details.setNumberOfInstallments(inst);
+                details.setInstallmentsPaid(0);
+                details.setTotalPaid(BigDecimal.ZERO);
+                details.setRemainingAmount(total);
                 details.setTotalPaid(BigDecimal.ZERO);
                 details.setRemainingAmount(total);
 
