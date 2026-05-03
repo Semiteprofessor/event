@@ -2,6 +2,7 @@ package com.event.events.service;
 
 import com.event.events.dto.request.CreateEventRequest;
 import com.event.events.dto.request.EditEventRequest;
+import com.event.events.enums.AttendeeStatus;
 import com.event.events.exception.AuthException;
 import com.event.events.model.Event;
 import com.event.events.model.SavedEvent;
@@ -155,7 +156,7 @@ public class EventService {
                         Attendee.builder()
                                 .userId(userId)
                                 .email(email)
-                                .status("absent")
+                                .status(AttendeeStatus.ABSENT)
                                 .build()
                 );
 
@@ -172,8 +173,7 @@ public class EventService {
 
         Attendee attendee = event.getAttendees()
                 .stream()
-                .filter(a ->
-                        a.getUserId().equals(userId))
+                .filter(a -> a.getUserId().equals(userId))
                 .findFirst()
                 .orElseThrow(() ->
                         new AuthException(
@@ -181,7 +181,18 @@ public class EventService {
                                 "Attendee not found"
                         ));
 
-        attendee.setStatus(status);
+        try {
+            AttendeeStatus attendeeStatus =
+                    AttendeeStatus.valueOf(status.toUpperCase());
+
+            attendee.setStatus(attendeeStatus);
+
+        } catch (IllegalArgumentException ex) {
+            throw new AuthException(
+                    400,
+                    "Invalid attendance status"
+            );
+        }
 
         return eventRepository.save(event);
     }
