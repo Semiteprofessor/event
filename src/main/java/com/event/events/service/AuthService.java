@@ -284,17 +284,17 @@ public class AuthService {
     private void resendOtpInternal(User user) {
         String otp = OtpUtil.generateOtp(5);
         saveOtp(user.getEmail(), otp);
-        emailService.sendOtp(user.getEmail(), otp, user.getName());
+        emailService.sendOtpEmail(user.getEmail(), user.getName(), otp);
     }
 
     private void sendAndPersistOtp(User user) {
         String otp = OtpUtil.generateOtp(5);
         saveOtp(user.getEmail(), otp);
-        emailService.sendOtp(user.getEmail(), otp, user.getName());
+        emailService.sendOtpEmail(user.getEmail(), user.getName(), otp);
     }
 
     private void saveOtp(String email, String otp) {
-        Otp entity = otpRepository.findByEmail(email).orElse(new Otp());
+        Otp entity = otpRepository.findTopByEmailOrderByUpdatedAtDesc(email).orElse(new Otp());
         entity.setEmail(email);
         entity.setOtp(otp);
         entity.setOtpType(OtpType.REGISTRATION);
@@ -385,7 +385,7 @@ public class AuthService {
                 "Hello " + user.getName() +
                         ", click the link below to reset your password:\n" + link;
 
-        emailService.sendOtp(
+        emailService.sendOtpEmail(
                 user.getEmail(),
                 "Password Reset",
                 message

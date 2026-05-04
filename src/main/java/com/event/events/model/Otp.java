@@ -4,6 +4,7 @@ import com.event.events.enums.OtpType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import jakarta.validation.constraints.Email;
@@ -27,6 +28,7 @@ public class Otp {
 
     @Email
     @NotBlank
+    @Indexed(unique = true)
     private String email;
 
     @NotBlank
