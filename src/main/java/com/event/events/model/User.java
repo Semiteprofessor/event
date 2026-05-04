@@ -27,7 +27,7 @@ public class User {
     private String phone;
     private String bio;
 
-    private Role role = Role.GUEST;
+    private Role role = Role.guest;
 
     private boolean isEmailVerified = false;
 

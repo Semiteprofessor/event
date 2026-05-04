@@ -15,19 +15,17 @@ public class TokenService {
 
     public String refreshToken(String token) {
 
-        if (token == null) {
+        if (token == null || token.isBlank()) {
             throw new RuntimeException("Refresh token missing");
         }
 
-        Claims payload;
+        String userId;
 
         try {
-            payload = jwtService.verifyRefreshToken(token);
+            userId = jwtService.extractUserIdFromRefreshToken(token);
         } catch (Exception e) {
             throw new RuntimeException("Invalid or expired refresh token");
         }
-
-        String userId = payload.getSubject();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));

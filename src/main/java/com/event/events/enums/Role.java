@@ -1,5 +1,5 @@
 package com.event.events.enums;
 
 public enum Role {
-    SUPER_ADMIN, ADMIN, EDITOR, VENDOR, GUEST
+    super_admin, admin, editor, vendor, guest
 }

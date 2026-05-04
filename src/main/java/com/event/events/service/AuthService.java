@@ -222,7 +222,7 @@ public class AuthService {
                 .name(oauthUser.getName())
                 .email(oauthUser.getEmail())
                 .password(null)
-                .role(Role.GUEST)
+                .role(Role.guest)
                 .isEmailVerified(true)
                 .isAdmin(false)
                 .build();
@@ -265,7 +265,7 @@ public class AuthService {
     private User createNewUser(RegisterRequest req) {
         long count = userRepository.count();
 
-        String role = count == 0 ? "super admin"
+        String role = count == 0 ? String.valueOf(Role.super_admin)
                 : (req.getRole() != null ? req.getRole() : "guest");
 
         boolean isAdmin = role.contains("admin");
