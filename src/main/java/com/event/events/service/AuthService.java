@@ -139,10 +139,23 @@ public class AuthService {
 
         validateResetRequest(token, newPassword);
 
-        userRepository.findByResetToken(token)
-                .ifPresent(this::processPasswordReset);
+        User user = userRepository.findByResetToken(token)
+                .orElseThrow(() -> new AuthException(400, "Invalid or expired token"));
 
-        return AuthResponse.ok("If the token is valid, password has been reset.");
+        if (user.getResetTokenExpires() == null ||
+                user.getResetTokenExpires().before(new Date())) {
+            throw new AuthException(400, "Reset token expired");
+        }
+
+        user.setPassword(PasswordUtil.encode(newPassword));
+        user.setResetToken(null);
+        user.setResetTokenExpires(null);
+
+        userRepository.save(user);
+
+        log.info("Password reset successful for {}", user.getEmail());
+
+        return AuthResponse.ok("Password reset successful");
     }
 
     public AuthResponse refreshToken(String refreshToken) {
@@ -375,6 +388,10 @@ public class AuthService {
 
         if (password == null || password.isBlank()) {
             throw new AuthException(400, "Password is required");
+        }
+
+        if (password.length() < 6) {
+            throw new AuthException(400, "Password must be at least 6 characters");
         }
     }
 
