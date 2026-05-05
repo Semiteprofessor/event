@@ -5,6 +5,8 @@ import com.event.events.enums.Role;
 import com.event.events.enums.UserType;
 import com.event.events.model.embeded.Notifications;
 import com.event.events.model.embeded.VendorOnboarding;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -24,6 +26,8 @@ public class User {
 
     private String name;
 
+    @Email
+    @NotBlank
     @Indexed(unique = true)
     private String email;
 
