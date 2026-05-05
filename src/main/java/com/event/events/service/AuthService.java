@@ -294,7 +294,7 @@ public class AuthService {
     }
 
     private void saveOtp(String email, String otp) {
-        Otp entity = otpRepository.findTopByEmailOrderByUpdatedAtDesc(email).orElse(new Otp());
+        Otp entity = otpRepository.findTopByEmailAndOtpTypeOrderByUpdatedAtDesc(email, OtpType.REGISTRATION).orElse(new Otp());
         entity.setEmail(email);
         entity.setOtp(otp);
         entity.setUpdatedAt(new Date());
@@ -351,12 +351,21 @@ public class AuthService {
     }
 
     private void activateUser(User user) {
+        if (user.isEmailVerified()) {
+            return;
+        }
+
         user.setEmailVerified(true);
+        user.setUpdatedAt(new Date());
+
         userRepository.save(user);
+
+        log.info("User email verified: {}", user.getEmail());
     }
 
     private void clearOtp(String email) {
-        otpRepository.deleteByEmail(email);
+        otpRepository.deleteByEmailAndOtpType(email, OtpType.REGISTRATION);
+        log.debug("OTP cleared for {}", email);
     }
 
     private void validateResetRequest(String token, String password) {

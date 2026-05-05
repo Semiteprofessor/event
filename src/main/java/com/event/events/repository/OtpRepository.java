@@ -8,7 +8,10 @@ import java.util.Optional;
 
 public interface OtpRepository extends MongoRepository<Otp, String> {
 
-    Optional<Otp> findTopByEmailOrderByUpdatedAtDesc(String email);
+    Optional<Otp> findTopByEmailAndOtpTypeOrderByUpdatedAtDesc(
+            String email,
+            OtpType otpType
+    );
 
     Optional<Otp> findByEmailAndOtpAndOtpType(
             String email,
@@ -16,5 +19,5 @@ public interface OtpRepository extends MongoRepository<Otp, String> {
             OtpType otpType
     );
 
-    void deleteByEmail(String email);
+    void deleteByEmailAndOtpType(String email, OtpType otpType);
 }
