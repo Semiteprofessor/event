@@ -297,12 +297,13 @@ public class AuthService {
         Otp entity = otpRepository.findTopByEmailOrderByUpdatedAtDesc(email).orElse(new Otp());
         entity.setEmail(email);
         entity.setOtp(otp);
+        entity.setUpdatedAt(new Date());
         entity.setOtpType(OtpType.REGISTRATION);
         otpRepository.save(entity);
     }
 
     private Otp validateOtp(String email, String otp) {
-        return otpRepository.findByEmailAndOtpAndOtpType(email, otp, "REGISTRATION")
+        return otpRepository.findByEmailAndOtpAndOtpType(email, otp, OtpType.REGISTRATION)
                 .orElseThrow(() -> new AuthException(401, "Invalid OTP"));
     }
 

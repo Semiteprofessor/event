@@ -17,7 +17,11 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 @Document(collection = "otps")
-@CompoundIndex(name = "email_type_created_idx", def = "{'email':1, 'otpType':1, 'createdAt':-1}")
+@CompoundIndex(
+        name = "email_type_unique",
+        def = "{'email':1, 'otpType':1}",
+        unique = true
+)
 public class Otp {
 
     @Id
@@ -28,7 +32,6 @@ public class Otp {
 
     @Email
     @NotBlank
-    @Indexed(unique = true)
     private String email;
 
     @NotBlank
