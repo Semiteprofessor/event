@@ -2,9 +2,10 @@ spring:
   application:
     name: event-management
 
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/event
+  datasource:
+    url: jdbc:postgresql://localhost:5432/event_db
+    username: postgres
+    password: your_password
 
     redis:
       host: ${REDIS_HOST:localhost}
