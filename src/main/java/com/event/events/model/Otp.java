@@ -1,44 +1,63 @@
 package com.event.events.model;
 
 import com.event.events.enums.OtpType;
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.util.Date;
+import java.time.Instant;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "otps")
-@CompoundIndex(
-        name = "email_type_created_idx",
-        def = "{'email':1, 'otpType':1, 'updatedAt':-1}"
+@Entity
+@Table(
+        name = "otps",
+        indexes = {
+                @Index(
+                        name = "idx_otp_email_type_updated",
+                        columnList = "email, otpType, updatedAt"
+                )
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_otp_email_type",
+                        columnNames = {"email", "otpType"}
+                )
+        }
 )
 public class Otp {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @NotBlank
+    @Column(nullable = false)
     private String otp;
 
     @Email
     @NotBlank
-    @Indexed(unique = true)
+    @Column(nullable = false)
     private String email;
 
     @NotBlank
+    @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
     private OtpType otpType = OtpType.REGISTRATION;
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    @Column(updatable = false, nullable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
