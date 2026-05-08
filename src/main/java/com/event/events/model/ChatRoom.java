@@ -1,30 +1,50 @@
 package com.event.events.model;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.index.Indexed;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.util.Date;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "chat_rooms")
+@Entity
+@Table(
+        name = "chat_rooms",
+        indexes = {
+                @Index(name = "idx_chatroom_last_sender", columnList = "lastMessageSender")
+        }
+)
 public class ChatRoom {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Indexed
-    private List<String> participants;
+    @ElementCollection
+    @CollectionTable(
+            name = "chat_room_participants",
+            joinColumns = @JoinColumn(name = "chat_room_id")
+    )
+    @Column(name = "participant")
+    @Builder.Default
+    private List<String> participants = new ArrayList<>();
 
+    @Column(columnDefinition = "TEXT")
     private String lastMessage;
 
     private String lastMessageSender;
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    @Column(updatable = false, nullable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
