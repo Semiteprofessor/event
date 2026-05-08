@@ -190,18 +190,35 @@ public class BookingService {
 
         try {
             emailService.sendInstallmentPaymentMail(
-                    booking.getUserEmail(),
-                    ticket.getType(),
-                    amount
+                    booking.getUserEmail(),        // userName? (see note below)
+                    booking.getUserEmail(),        // email
+                    "Installment Payment Update",  // subject
+                    booking.getEvent().toString(), // eventName
+                    ticket.getType(),              // ticketName
+                    amount.doubleValue(),          // ✅ FIX HERE
+                    details.getTotalPaid().doubleValue(),
+                    details.getRemainingAmount().doubleValue(),
+                    details.getInstallmentsPaid(),
+                    details.getNumberOfInstallments(),
+                    "installmentPaymentHistory.hbs",
+                    getFormattedDateTime()
             );
+
         } catch (Exception ex) {
-            log.error(
-                    "Failed to send installment email",
-                    ex
-            );
+            log.error("Failed to send installment email", ex);
         }
 
         return booking;
+    }
+
+    private String getFormattedDateTime() {
+        return java.time.LocalDateTime
+                .now()
+                .format(
+                        java.time.format.DateTimeFormatter.ofPattern(
+                                "yyyy-MM-dd HH:mm:ss"
+                        )
+                );
     }
 
     public Booking getBookingById(String bookingId) {
