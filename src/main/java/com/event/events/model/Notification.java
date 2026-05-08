@@ -1,35 +1,60 @@
 package com.event.events.model;
 
 import com.event.events.enums.NotificationType;
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
-import java.util.Date;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "notifications")
+@Entity
+@Table(
+        name = "notifications",
+        indexes = {
+                @Index(name = "idx_notification_user", columnList = "userId"),
+                @Index(name = "idx_notification_read", columnList = "read"),
+                @Index(name = "idx_notification_type", columnList = "type")
+        }
+)
 public class Notification {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String user;
+    private String userId;
 
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String message;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
     private NotificationType type = NotificationType.SYSTEM;
 
+    @Builder.Default
     private boolean read = false;
 
-    private Map<String, Object> metadata;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private Map<String, Object> metadata = new HashMap<>();
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    @Column(updatable = false, nullable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
