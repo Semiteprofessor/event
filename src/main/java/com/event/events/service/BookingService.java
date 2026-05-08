@@ -1,6 +1,5 @@
 package com.event.events.service;
 
-import com.event.events.dto.request.BookingRequest;
 import com.event.events.dto.request.InstallmentPaymentRequest;
 import com.event.events.enums.PaymentType;
 import com.event.events.enums.SubscriptionStatus;
@@ -13,7 +12,6 @@ import com.event.events.model.embeded.Payment;
 import com.event.events.model.embeded.TicketType;
 import com.event.events.repository.BookingRepository;
 import com.event.events.repository.EventRepository;
-import com.event.events.repository.TicketRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
