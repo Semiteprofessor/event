@@ -143,7 +143,7 @@ public class AuthService {
                 .orElseThrow(() -> new AuthException(400, "Invalid or expired token"));
 
         if (user.getResetTokenExpires() == null ||
-                user.getResetTokenExpires().before(new Date())) {
+                user.getResetTokenExpires().isBefore(Instant.now())) {
             throw new AuthException(400, "Reset token expired");
         }
 
@@ -369,7 +369,7 @@ public class AuthService {
         }
 
         user.setEmailVerified(true);
-        user.setUpdatedAt(new Date());
+        user.setUpdatedAt(Instant.now());
 
         userRepository.save(user);
 
@@ -401,7 +401,7 @@ public class AuthService {
 
         user.setResetToken(token);
         user.setResetTokenExpires(
-                new Date(System.currentTimeMillis() + 1000 * 60 * 15)
+                Instant.now().plus(Duration.ofMinutes(15))
         );
 
         userRepository.save(user);
