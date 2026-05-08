@@ -1,12 +1,12 @@
 package com.event.events.repository;
 
 import com.event.events.model.ChatRoom;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface ChatRoomRepository extends MongoRepository<ChatRoom, String> {
+public interface ChatRoomRepository extends JpaRepository<ChatRoom, String> {
 
     List<ChatRoom> findByParticipantsContaining(String userId);
 

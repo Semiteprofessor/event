@@ -1,7 +1,7 @@
 package com.event.events.repository;
 
 import com.event.events.model.Wishlist;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface WishlistRepository extends MongoRepository<Wishlist, String> {
+public interface WishlistRepository extends JpaRepository<Wishlist, String> {
 }

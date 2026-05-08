@@ -1,8 +1,11 @@
 package com.event.events.repository;
 
 import com.event.events.model.Event;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface EventRepository extends MongoRepository<Event, String> {
-    Event findBySlug(String slug);
+import java.util.Optional;
+
+public interface EventRepository extends JpaRepository<Event, String> {
+
+    Optional<Event> findBySlug(String slug);
 }

@@ -1,10 +1,10 @@
 package com.event.events.repository;
 
 import com.event.events.model.Portfolio;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
-public interface PortfolioRepository extends MongoRepository<Portfolio, String> {
+public interface PortfolioRepository extends JpaRepository<Portfolio, String> {
 
     List<Portfolio> findByVendor(String vendorId);
 

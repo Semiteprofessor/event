@@ -1,10 +1,10 @@
 package com.event.events.repository;
 
 import com.event.events.model.SavedEvent;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
-public interface SavedEventRepository extends MongoRepository<SavedEvent, String> {
+public interface SavedEventRepository extends JpaRepository<SavedEvent, String> {
 
     List<SavedEvent> findByGuest(String guestId);
 
