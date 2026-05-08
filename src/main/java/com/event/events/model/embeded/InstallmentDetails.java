@@ -1,27 +1,33 @@
 package com.event.events.model.embeded;
 
+import com.event.events.model.Payment;
+import jakarta.persistence.*;
 import lombok.Data;
-import java.util.Date;
+
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @Data
+@Embeddable
 public class InstallmentDetails {
 
     private Integer numberOfInstallments = 1;
 
-    private Double amountPerInstallment = 0.0;
+    private BigDecimal amountPerInstallment = BigDecimal.ZERO;
 
     private Integer installmentsPaid = 0;
 
-    private Double totalPaid = 0.0;
+    private BigDecimal totalPaid = BigDecimal.ZERO;
 
-    private Double remainingAmount = 0.0;
+    private BigDecimal remainingAmount = BigDecimal.ZERO;
 
+    @OneToMany
     private List<Payment> payments;
 
-    private Double amountPaid = 0.0;
+    private BigDecimal amountPaid = BigDecimal.ZERO;
 
-    private Double balance = 0.0;
+    private BigDecimal balance = BigDecimal.ZERO;
 
-    private Date nextPaymentDate;
+    private Instant nextPaymentDate;
 }
