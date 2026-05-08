@@ -1,35 +1,58 @@
 package com.event.events.model;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.util.Date;
+import java.math.BigDecimal;
+import java.time.Instant;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "wishlist_support")
+@Entity
+@Table(
+        name = "wishlist_support",
+        indexes = {
+                @Index(
+                        name = "idx_wishlist_support_wishlist",
+                        columnList = "wishlist"
+                ),
+                @Index(
+                        name = "idx_wishlist_support_supporter",
+                        columnList = "supporter"
+                )
+        }
+)
 public class WishlistSupport {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @NotBlank
+    @Column(nullable = false)
     private String wishlist;
 
     @NotBlank
+    @Column(nullable = false)
     private String supporter;
 
     @Min(1)
-    private double amount;
+    @Column(nullable = false)
+    private BigDecimal amount;
 
     private String supporterName;
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    @Column(updatable = false, nullable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
