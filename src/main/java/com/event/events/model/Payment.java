@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Getter
@@ -49,7 +50,7 @@ public class Payment {
     private String planId;
 
     @Column(nullable = false)
-    private double amount;
+    private BigDecimal amount;
 
     @NotBlank
     @Column(nullable = false)

@@ -164,7 +164,7 @@ public class BookingService {
         InstallmentDetails details =
                 ticket.getInstallmentDetails();
 
-        Double amount = request.getAmount();
+        BigDecimal amount = BigDecimal.valueOf(request.getAmount());
 
         details.setTotalPaid(
                 details.getTotalPaid().add(amount)
@@ -221,7 +221,7 @@ public class BookingService {
 
     private void createTickets(Booking booking) {
 
-        for (TicketType ticket : booking.getTickets()) {
+        for (BookingTicket ticket : booking.getTickets()) {
 
             for (int i = 0; i < ticket.getCount(); i++) {
 

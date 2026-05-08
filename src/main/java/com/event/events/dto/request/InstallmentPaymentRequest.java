@@ -16,7 +16,7 @@ public class InstallmentPaymentRequest {
     private String ticketName;
 
     @NotNull
-    private BigDecimal amount;
+    private Double amount;
 
     private String reference;
 }
