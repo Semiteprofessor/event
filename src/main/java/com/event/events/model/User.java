@@ -12,6 +12,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.Instant;
 import java.util.Date;
 
 @Getter
@@ -102,10 +103,11 @@ public class User {
     private Date bannedUntil;
 
     @CreationTimestamp
-    private Date createdAt;
+    @Column(updatable = false)
+    private Instant createdAt;
 
     @UpdateTimestamp
-    private Date updatedAt;
+    private Instant updatedAt;
 
     @PrePersist
     protected void onCreate() {

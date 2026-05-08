@@ -5,9 +5,11 @@ import com.event.events.enums.VendorStatus;
 import com.event.events.model.embeded.BookingTicket;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -25,10 +27,8 @@ public class Booking {
 
     private String event;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date eventDate;
+    private Instant eventDate;
 
-    @Column(nullable = false)
     private String userEmail;
 
     private String posterEmail;
@@ -73,21 +73,10 @@ public class Booking {
     @Builder.Default
     private List<String> registeredForm = new ArrayList<>();
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Instant createdAt;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        Date now = new Date();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = new Date();
-    }
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
