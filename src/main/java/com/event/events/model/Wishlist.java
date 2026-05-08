@@ -1,30 +1,50 @@
 package com.event.events.model;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import java.util.Date;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "wishlists")
+@Entity
+@Table(
+        name = "wishlists",
+        indexes = {
+                @Index(
+                        name = "idx_wishlist_event",
+                        columnList = "event"
+                ),
+                @Index(
+                        name = "idx_wishlist_user_email",
+                        columnList = "userEmail"
+                )
+        }
+)
 public class Wishlist {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @NotBlank
+    @Column(nullable = false)
     private String event;
 
     @Email
+    @Column(nullable = false)
     private String userEmail;
 
     @NotBlank
+    @Column(nullable = false)
     private String name;
 
     private String brand;
@@ -33,14 +53,27 @@ public class Wishlist {
 
     private String size;
 
-    private Double price;
+    @Column(nullable = false)
+    private BigDecimal price;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
+    @ElementCollection
+    @CollectionTable(
+            name = "wishlist_images",
+            joinColumns = @JoinColumn(name = "wishlist_id")
+    )
+    @Column(name = "image_url")
     private List<String> images = List.of();
 
-    private Double amountRaised;
+    @Column(nullable = false)
+    private BigDecimal amountRaised = BigDecimal.ZERO;
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    @Column(updatable = false, nullable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
