@@ -1,6 +1,6 @@
 package com.event.events.dto.request;
 
-import com.event.events.model.embeded.TicketType;
+import com.event.events.model.embeded.BookingTicket;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -21,5 +21,5 @@ public class BookingRequest {
 
     @Valid
     @NotEmpty
-    private List<TicketType> tickets;
+    private List<BookingTicket> tickets;
 }

@@ -7,16 +7,15 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Data
 @Embeddable
+@Data
 public class TicketType {
 
     private String type;
 
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    private BigDecimal price = BigDecimal.ZERO;
+    private BigDecimal price;
 
     private Integer quantity = 0;
 

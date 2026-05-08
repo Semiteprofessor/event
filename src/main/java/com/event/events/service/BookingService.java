@@ -8,6 +8,7 @@ import com.event.events.exception.AuthException;
 import com.event.events.model.Booking;
 import com.event.events.model.Event;
 import com.event.events.model.Ticket;
+import com.event.events.model.embeded.BookingTicket;
 import com.event.events.model.embeded.InstallmentDetails;
 import com.event.events.model.embeded.Payment;
 import com.event.events.model.embeded.TicketType;
@@ -45,7 +46,7 @@ public class BookingService {
 
         int totalCount = 0;
 
-        for (TicketType bookingTicket : request.getTickets()) {
+        for (BookingTicket bookingTicket : request.getTickets()) {
 
             TicketType eventTicket = eventTickets.stream()
                     .filter(t ->
