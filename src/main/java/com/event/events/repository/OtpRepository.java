@@ -2,11 +2,11 @@ package com.event.events.repository;
 
 import com.event.events.enums.OtpType;
 import com.event.events.model.Otp;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface OtpRepository extends MongoRepository<Otp, String> {
+public interface OtpRepository extends JpaRepository<Otp, String> {
 
     Optional<Otp> findTopByEmailAndOtpTypeOrderByUpdatedAtDesc(
             String email,

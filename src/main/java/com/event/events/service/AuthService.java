@@ -310,7 +310,7 @@ public class AuthService {
         Otp entity = otpRepository.findTopByEmailAndOtpTypeOrderByUpdatedAtDesc(email, OtpType.REGISTRATION).orElse(new Otp());
         entity.setEmail(email);
         entity.setOtp(otp);
-        entity.setUpdatedAt(new Date());
+        entity.setUpdatedAt(Instant.now());
         entity.setOtpType(OtpType.REGISTRATION);
         otpRepository.save(entity);
     }
@@ -322,7 +322,7 @@ public class AuthService {
 
     private boolean isOtpExpired(Otp otp) {
         return Duration.between(
-                otp.getUpdatedAt().toInstant(),
+                otp.getUpdatedAt(),
                 Instant.now()
         ).toMinutes() > 5;
     }
