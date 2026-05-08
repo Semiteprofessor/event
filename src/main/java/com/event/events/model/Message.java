@@ -1,37 +1,56 @@
 package com.event.events.model;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.util.Date;
+import java.time.Instant;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "messages")
+@Entity
+@Table(
+        name = "messages",
+        indexes = {
+                @Index(name = "idx_message_chatroom", columnList = "chatRoom"),
+                @Index(name = "idx_message_sender", columnList = "sender"),
+                @Index(name = "idx_message_receiver", columnList = "receiver")
+        }
+)
 public class Message {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @NotBlank
+    @Column(nullable = false)
     private String chatRoom;
 
     @NotBlank
+    @Column(nullable = false)
     private String sender;
 
     @NotBlank
+    @Column(nullable = false)
     private String receiver;
 
     @NotBlank
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
+    @Builder.Default
     private boolean read = false;
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    @Column(updatable = false, nullable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
