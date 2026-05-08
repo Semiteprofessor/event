@@ -1,44 +1,68 @@
 package com.event.events.model;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.util.Date;
+import java.time.Instant;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "reviews")
+@Entity
+@Table(
+        name = "reviews",
+        indexes = {
+                @Index(
+                        name = "idx_review_vendor",
+                        columnList = "vendor"
+                ),
+                @Index(
+                        name = "idx_review_rating",
+                        columnList = "rating"
+                )
+        }
+)
 public class Review {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @NotBlank
+    @Column(nullable = false)
     private String vendor;
 
     @NotBlank
+    @Column(nullable = false)
     private String reviewerName;
 
     @Email
     @NotBlank
+    @Column(nullable = false)
     private String reviewerEmail;
 
     private String reviewerAvatar;
 
     @Min(1)
     @Max(5)
+    @Column(nullable = false)
     private int rating;
 
     @NotBlank
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String comment;
 
     private String eventName;
 
-    private Date createdAt;
-    private Date updatedAt;
+    @CreationTimestamp
+    @Column(updatable = false, nullable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 }
