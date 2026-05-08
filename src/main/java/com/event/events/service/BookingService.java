@@ -190,12 +190,12 @@ public class BookingService {
 
         try {
             emailService.sendInstallmentPaymentMail(
-                    booking.getUserEmail(),        // userName? (see note below)
-                    booking.getUserEmail(),        // email
-                    "Installment Payment Update",  // subject
-                    booking.getEvent().toString(), // eventName
-                    ticket.getType(),              // ticketName
-                    amount.doubleValue(),          // ✅ FIX HERE
+                    booking.getUserEmail(),
+                    booking.getUserEmail(),
+                    "Installment Payment Update",
+                    booking.getEvent().toString(),
+                    ticket.getType(),
+                    amount.doubleValue(),
                     details.getTotalPaid().doubleValue(),
                     details.getRemainingAmount().doubleValue(),
                     details.getInstallmentsPaid(),

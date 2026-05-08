@@ -8,16 +8,16 @@ import org.springframework.web.bind.annotation.*;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ApiResponse> handleAuthException(AuthException ex) {
+    public ResponseEntity<ApiResponse<Object>> handleAuthException(AuthException ex) {
         return ResponseEntity
                 .status(ex.getStatus())
-                .body(new ApiResponse(false, ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse> handleGeneral(Exception ex) {
+    public ResponseEntity<ApiResponse<Object>> handleGeneral(Exception ex) {
         return ResponseEntity
                 .status(500)
-                .body(new ApiResponse(false, "Internal Server Error"));
+                .body(ApiResponse.error("Internal Server Error"));
     }
 }

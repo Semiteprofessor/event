@@ -40,7 +40,7 @@ public class AuthResponse {
     public static AuthResponse ok(String message) {
         return new AuthResponse(
                 200,
-                new ApiResponse(true, message),
+                ApiResponse.success(message),
                 null,
                 null,
                 null
@@ -60,7 +60,7 @@ public class AuthResponse {
     public static AuthResponse unauthorized(String message) {
         return new AuthResponse(
                 401,
-                new ApiResponse(false, message),
+                ApiResponse.error(message),
                 null,
                 null,
                 null

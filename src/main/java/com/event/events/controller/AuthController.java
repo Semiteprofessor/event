@@ -58,7 +58,7 @@ public class AuthController {
 
         if (token == null) {
             return ResponseEntity.status(401)
-                    .body(new ApiResponse(false, "Refresh token missing"));
+                    .body(ApiResponse.error("Refresh token missing"));
         }
 
         AuthResponse response = authService.refreshToken(token);
