@@ -3,14 +3,13 @@ package com.event.events.service;
 import com.event.events.dto.request.BookingRequest;
 import com.event.events.dto.request.InstallmentPaymentRequest;
 import com.event.events.enums.PaymentType;
-import com.event.events.enums.SubscriptionStatus;
 import com.event.events.exception.AuthException;
 import com.event.events.model.Booking;
 import com.event.events.model.Event;
 import com.event.events.model.Ticket;
 import com.event.events.model.embeded.BookingTicket;
 import com.event.events.model.embeded.InstallmentDetails;
-import com.event.events.model.embeded.Payment;
+import com.event.events.model.Payment;
 import com.event.events.model.embeded.TicketType;
 import com.event.events.repository.BookingRepository;
 import com.event.events.repository.EventRepository;
@@ -148,7 +147,7 @@ public class BookingService {
                 .orElseThrow(() ->
                         new AuthException(404, "Booking not found"));
 
-        TicketType ticket = booking.getTickets()
+        BookingTicket ticket = booking.getTickets()
                 .stream()
                 .filter(t ->
                         t.getType().equalsIgnoreCase(
@@ -165,7 +164,7 @@ public class BookingService {
         InstallmentDetails details =
                 ticket.getInstallmentDetails();
 
-        BigDecimal amount = request.getAmount();
+        Double amount = request.getAmount();
 
         details.setTotalPaid(
                 details.getTotalPaid().add(amount)

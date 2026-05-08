@@ -4,11 +4,12 @@ import com.event.events.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
 @Embeddable
 public class BookingTicket {
 
@@ -16,16 +17,16 @@ public class BookingTicket {
 
     private Integer count;
 
-    private Double price;
+    private BigDecimal price;
 
-    private String qrlSlug;
+    private String qrSlug;
 
-    private Double totalAmount;
+    private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
     private PaymentType paymentType = PaymentType.ONE_OFF;
 
-    private boolean isInstallment = false;
+    private boolean installment;
 
     @Embedded
     private InstallmentDetails installmentDetails;

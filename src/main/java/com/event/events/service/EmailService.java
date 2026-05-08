@@ -40,4 +40,47 @@ public class EmailService {
             throw new RuntimeException("Failed to send email", e);
         }
     }
+
+    public void sendInstallmentPaymentMail(
+            String userName,
+            String email,
+            String subject,
+            String eventName,
+            String ticketName,
+            double amountPaid,
+            double totalPaid,
+            double remainingAmount,
+            int installmentsPaid,
+            int numberOfInstallments,
+            String templateFile,
+            String time
+    ) {
+        try {
+            Context context = new Context();
+            context.setVariable("userName", userName);
+            context.setVariable("eventName", eventName);
+            context.setVariable("ticketName", ticketName);
+            context.setVariable("amountPaid", amountPaid);
+            context.setVariable("totalPaid", totalPaid);
+            context.setVariable("remainingAmount", remainingAmount);
+            context.setVariable("installmentsPaid", installmentsPaid);
+            context.setVariable("numberOfInstallments", numberOfInstallments);
+            context.setVariable("time", time);
+
+            String html = templateEngine.process(templateFile, context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(email);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send installment email", e);
+        }
+    }
 }
