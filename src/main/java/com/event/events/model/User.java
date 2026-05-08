@@ -13,7 +13,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -57,13 +56,11 @@ public class User {
     @Column(length = 2000)
     private String refreshToken;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date refreshTokenExpires;
+    private Instant refreshTokenExpires;
 
     private String resetToken;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date resetTokenExpires;
+    private Instant resetTokenExpires;
 
     @Builder.Default
     private boolean isAdmin = false;
@@ -99,25 +96,12 @@ public class User {
     @Builder.Default
     private String banReason = "";
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date bannedUntil;
+    private Instant bannedUntil;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
     private Instant updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        Date now = new Date();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = new Date();
-    }
 }
