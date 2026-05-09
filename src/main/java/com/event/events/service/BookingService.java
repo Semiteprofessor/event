@@ -9,7 +9,7 @@ import com.event.events.model.Booking;
 import com.event.events.model.Event;
 import com.event.events.model.embeded.BookingTicket;
 import com.event.events.model.embeded.InstallmentDetails;
-import com.event.events.model.Payment;
+import com.event.events.model.embeded.Payment;
 import com.event.events.model.embeded.TicketType;
 import com.event.events.repository.BookingRepository;
 import com.event.events.repository.EventRepository;
@@ -42,7 +42,7 @@ public class BookingService {
 
         int totalTickets = 0;
 
-        for (BookingTicketRequest ticketReq : request.getTickets()) {
+        for (BookingTicket ticketReq : request.getTickets()) {
 
             TicketType eventTicket = event.getTicketTypes().stream()
                     .filter(t -> t.getType().equalsIgnoreCase(ticketReq.getType()))
