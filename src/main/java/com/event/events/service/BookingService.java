@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +43,7 @@ public class BookingService {
 
         int totalTickets = 0;
 
-        for (BookingTicket ticketReq : request.getTickets()) {
+        for (BookingTicketRequest ticketReq : request.getTickets()) {
 
             TicketType eventTicket = event.getTicketTypes().stream()
                     .filter(t -> t.getType().equalsIgnoreCase(ticketReq.getType()))
@@ -97,7 +98,7 @@ public class BookingService {
         Booking booking = new Booking();
         booking.setUserEmail(request.getUserEmail());
         booking.setEventId(event.getId());
-        booking.setTickets(request.getTickets());
+        booking.setTickets(bookingTickets);
         booking.setTicketsCount(totalTickets);
         booking.setStatus(BookingStatus.PAID);
         booking.setCreatedAt(Instant.now());
@@ -163,13 +164,11 @@ public class BookingService {
         return saved;
     }
 
-    @Override
     public Booking getBookingById(Long id) {
-        return bookingRepository.findById(id)
+        return bookingRepository.findById(String.valueOf(id))
                 .orElseThrow(() -> new RuntimeException("Not found"));
     }
 
-    @Override
     public List<Booking> getMyBookings(String email) {
         return bookingRepository.findByUserEmail(email);
     }

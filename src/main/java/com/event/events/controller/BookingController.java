@@ -58,7 +58,7 @@ public class BookingController {
     ) {
 
         Booking booking =
-                bookingService.getBookingById(bookingId);
+                bookingService.getBookingById(Long.valueOf(bookingId));
 
         return ResponseEntity.ok(
                 ApiResponse.success(
