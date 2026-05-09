@@ -1,14 +1,9 @@
 package com.event.events.controller;
 
-import com.event.events.dto.request.SendBookingRequest;
 import com.event.events.dto.request.UpdateGuestPasswordRequest;
 import com.event.events.dto.request.UpdateGuestProfileRequest;
 import com.event.events.dto.response.ApiResponse;
-import com.event.events.model.Booking;
-import com.event.events.model.Event;
-import com.event.events.model.Guest;
-import com.event.events.model.SavedEvent;
-import com.event.events.model.Vendor;
+import com.event.events.model.*;
 import com.event.events.service.GuestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +25,7 @@ public class GuestController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<Guest> getGuestById(
+    public ApiResponse<User> getGuestById(
             @PathVariable String id
     ) {
         return ApiResponse.success(
@@ -40,9 +35,9 @@ public class GuestController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Guest> updateGuestById(
+    public ApiResponse<User> updateGuestById(
             @PathVariable String id,
-            @RequestBody Guest request
+            @RequestBody UpdateGuestProfileRequest request
     ) {
         return ApiResponse.success(
                 "Guest updated successfully",
