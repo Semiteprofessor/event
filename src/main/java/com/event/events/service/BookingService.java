@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -37,6 +38,8 @@ public class BookingService {
         Event event = eventRepository.findById(request.getEventId())
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
+        List<BookingTicket> bookingTickets = new ArrayList<>();
+
         int totalTickets = 0;
 
         for (BookingTicketRequest ticketReq : request.getTickets()) {
@@ -50,9 +53,8 @@ public class BookingService {
                 throw new RuntimeException("Not enough tickets");
             }
 
-            BigDecimal total =
-                    eventTicket.getPrice()
-                            .multiply(BigDecimal.valueOf(ticketReq.getCount()));
+            BigDecimal total = eventTicket.getPrice()
+                    .multiply(BigDecimal.valueOf(ticketReq.getCount()));
 
             eventTicket.setRemaining(
                     eventTicket.getRemaining() - ticketReq.getCount()
@@ -74,22 +76,15 @@ public class BookingService {
 
                 InstallmentDetails details = new InstallmentDetails();
 
-                int inst = event.getInstallmentConfig().getNumberOfInstallments();
+                int inst = event.getInstallmentConfig()
+                        .getNumberOfInstallments();
 
-                details.setNumberOfInstallments(inst);
-                details.setInstallmentsPaid(0);
                 details.setNumberOfInstallments(inst);
                 details.setInstallmentsPaid(0);
                 details.setTotalPaid(BigDecimal.ZERO);
                 details.setRemainingAmount(total);
-                details.setTotalPaid(BigDecimal.ZERO);
-                details.setRemainingAmount(total);
 
-                bookingTicket.setPaymentType(PaymentType.INSTALLMENT);
                 bookingTicket.setInstallmentDetails(details);
-
-            } else {
-                bookingTicket.setPaymentType(PaymentType.ONE_OFF);
             }
 
             bookingTickets.add(bookingTicket);
@@ -139,9 +134,9 @@ public class BookingService {
         details.getPayments().add(payment);
 
         booking.setStatus(
-                details.getRemainingAmount().compareTo(BigDecimal.ZERO) <= 0
+                BookingStatus.valueOf(details.getRemainingAmount().compareTo(BigDecimal.ZERO) <= 0
                         ? "paid"
-                        : "partial"
+                        : "partial")
         );
 
         Booking saved = bookingRepository.save(booking);

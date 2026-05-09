@@ -25,6 +25,8 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    private String eventId;
+
     private String event;
 
     private Instant eventDate;
